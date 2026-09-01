@@ -3,7 +3,7 @@ import { useState, type ButtonHTMLAttributes, type ReactNode } from 'react';
 
 export function Button({ className = '', variant = 'primary', children, ...props }: ButtonHTMLAttributes<HTMLButtonElement> & { variant?: 'primary' | 'secondary' | 'ghost' | 'danger' }) {
   const styles = { primary: 'bg-primary text-primary-foreground hover:opacity-90 shadow-sm', secondary: 'bg-secondary text-secondary-foreground hover:bg-secondary/75', ghost: 'text-muted-foreground hover:bg-muted hover:text-foreground', danger: 'bg-destructive/10 text-destructive hover:bg-destructive/15' };
-  return <button className={`inline-flex h-10 items-center justify-center gap-2 rounded-xl px-4 text-[13px] font-semibold transition-all duration-200 disabled:pointer-events-none disabled:opacity-50 ${styles[variant]} ${className}`} {...props} />;
+  return <button className={`inline-flex h-10 items-center justify-center gap-2 rounded-xl px-4 text-[13px] font-semibold transition-all duration-200 disabled:pointer-events-none disabled:opacity-50 ${styles[variant]} ${className}`} {...props}>{children}</button>;
 }
 
 export function PageHeader({ eyebrow, title, description, action }: { eyebrow: string; title: string; description?: string; action?: ReactNode }) {
