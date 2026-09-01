@@ -1,0 +1,1 @@
+- [OpenAPI y Zod](openapi-zod.md) — en este workspace, los enteros OpenAPI generan zod.int incompatible con el Zod 3 instalado; usar números o revisar el catálogo antes de codegen.

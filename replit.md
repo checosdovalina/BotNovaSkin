@@ -1,6 +1,6 @@
-# [Project name]
+# Estética Bot
 
-_Replace the heading above with the project's name, and this line with one sentence describing what this app does for users._
+Panel para administrar tratamientos, preguntas frecuentes, citas y la preparación de un bot de atención por WhatsApp para una estética.
 
 ## Run & Operate
 
@@ -22,23 +22,35 @@ _Replace the heading above with the project's name, and this line with one sente
 
 ## Where things live
 
-_Populate as you build — short repo map plus pointers to the source-of-truth file for DB schema, API contracts, theme files, etc._
+- `artifacts/estetica-bot/src/pages/` — dashboard, agenda, tratamientos, preguntas del bot y simulador de WhatsApp.
+- `artifacts/api-server/src/routes/` — endpoints del panel y disponibilidad.
+- `artifacts/api-server/src/routes/webhooks.ts` — verificación y recepción inicial de eventos de WhatsApp.
+- `lib/api-spec/openapi.yaml` — contrato único de la API.
+- `lib/db/src/schema/` — tablas de tratamientos, preguntas frecuentes y citas.
 
 ## Architecture decisions
 
-_Populate as you build — non-obvious choices a reader couldn't infer from the code (3-5 bullets)._
+- La primera versión funciona sin WhatsApp conectado para que el flujo se pueda validar con datos reales antes de configurar Meta.
+- Los tratamientos y preguntas frecuentes se cargan desde PostgreSQL y se pueden administrar desde el panel.
+- El bot no diagnostica ni decide elegibilidad médica; las dudas clínicas se derivan a una valoración profesional.
+- La conexión a WhatsApp está representada como pendiente hasta que se configure el webhook oficial de Meta.
 
 ## Product
 
-_Describe the high-level user-facing capabilities of this app once they exist._
+- Resumen diario de citas y estado del bot.
+- Agenda con creación, edición, filtros y estados.
+- Catálogo editable de seis tratamientos.
+- Preguntas frecuentes agrupadas por tratamiento.
+- Simulador de conversación y guía de preparación del webhook.
 
 ## User preferences
 
-_Populate as you build — explicit user instructions worth remembering across sessions._
+- El usuario solicitó instrucciones paso a paso en español.
 
 ## Gotchas
 
-_Populate as you build — sharp edges, "always run X before Y" rules._
+- Mantener `lib/api-spec/openapi.yaml` como fuente de verdad y ejecutar codegen después de cada cambio.
+- Las rutas del servidor se sirven bajo `/api`; el frontend debe usar los hooks generados.
 
 ## Pointers
 

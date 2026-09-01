@@ -3,13 +3,23 @@ info:
   # Do not change the title, if the title changes, the import paths will be broken
   title: Api
   version: 0.1.0
-  description: API specification
+  description: API para el panel del bot de citas de una estética
 servers:
   - url: /api
     description: Base API path
 tags:
   - name: health
     description: Health operations
+  - name: dashboard
+    description: Resumen del negocio
+  - name: services
+    description: Tratamientos y precios
+  - name: faqs
+    description: Preguntas y respuestas del bot
+  - name: appointments
+    description: Agenda de citas
+  - name: bot
+    description: Disponibilidad y conexión del bot
 paths:
   /healthz:
     get:
@@ -24,6 +34,287 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/HealthStatus"
+  /dashboard:
+    get:
+      operationId: getDashboard
+      tags: [dashboard]
+      summary: Obtener resumen del negocio
+      responses:
+        "200":
+          description: Resumen de citas, tratamientos y configuración
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Dashboard"
+  /services:
+    get:
+      operationId: listServices
+      tags: [services]
+      summary: Listar tratamientos
+      responses:
+        "200":
+          description: Tratamientos disponibles
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Service"
+    post:
+      operationId: createService
+      tags: [services]
+      summary: Crear tratamiento
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ServiceInput"
+      responses:
+        "201":
+          description: Tratamiento creado
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Service"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+  /services/{id}:
+    patch:
+      operationId: updateService
+      tags: [services]
+      summary: Actualizar tratamiento
+      parameters:
+        - $ref: "#/components/parameters/Id"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ServiceUpdate"
+      responses:
+        "200":
+          description: Tratamiento actualizado
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Service"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "404":
+          $ref: "#/components/responses/NotFound"
+    delete:
+      operationId: deleteService
+      tags: [services]
+      summary: Desactivar tratamiento
+      parameters:
+        - $ref: "#/components/parameters/Id"
+      responses:
+        "204":
+          description: Tratamiento eliminado
+        "404":
+          $ref: "#/components/responses/NotFound"
+  /faqs:
+    get:
+      operationId: listFaqs
+      tags: [faqs]
+      summary: Listar preguntas frecuentes
+      parameters:
+        - name: serviceId
+          in: query
+          required: false
+          schema:
+            type: number
+      responses:
+        "200":
+          description: Preguntas frecuentes
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Faq"
+    post:
+      operationId: createFaq
+      tags: [faqs]
+      summary: Crear pregunta frecuente
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/FaqInput"
+      responses:
+        "201":
+          description: Pregunta creada
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Faq"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+  /faqs/{id}:
+    patch:
+      operationId: updateFaq
+      tags: [faqs]
+      summary: Actualizar pregunta frecuente
+      parameters:
+        - $ref: "#/components/parameters/Id"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/FaqUpdate"
+      responses:
+        "200":
+          description: Pregunta actualizada
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Faq"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "404":
+          $ref: "#/components/responses/NotFound"
+    delete:
+      operationId: deleteFaq
+      tags: [faqs]
+      summary: Eliminar pregunta frecuente
+      parameters:
+        - $ref: "#/components/parameters/Id"
+      responses:
+        "204":
+          description: Pregunta eliminada
+        "404":
+          $ref: "#/components/responses/NotFound"
+  /appointments:
+    get:
+      operationId: listAppointments
+      tags: [appointments]
+      summary: Listar citas
+      parameters:
+        - name: from
+          in: query
+          required: false
+          schema:
+            type: string
+            format: date
+        - name: to
+          in: query
+          required: false
+          schema:
+            type: string
+            format: date
+        - name: status
+          in: query
+          required: false
+          schema:
+            $ref: "#/components/schemas/AppointmentStatus"
+      responses:
+        "200":
+          description: Citas registradas
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Appointment"
+    post:
+      operationId: createAppointment
+      tags: [appointments]
+      summary: Crear cita
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AppointmentInput"
+      responses:
+        "201":
+          description: Cita creada
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Appointment"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "409":
+          description: El horario ya está ocupado
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+  /appointments/{id}:
+    patch:
+      operationId: updateAppointment
+      tags: [appointments]
+      summary: Actualizar estado o datos de una cita
+      parameters:
+        - $ref: "#/components/parameters/Id"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AppointmentUpdate"
+      responses:
+        "200":
+          description: Cita actualizada
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Appointment"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          description: El horario ya está ocupado
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+  /availability:
+    get:
+      operationId: getAvailability
+      tags: [bot]
+      summary: Consultar horarios libres
+      parameters:
+        - name: date
+          in: query
+          required: true
+          schema:
+            type: string
+            format: date
+        - name: serviceId
+          in: query
+          required: true
+          schema:
+            type: number
+      responses:
+        "200":
+          description: Horarios libres para una fecha
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/AvailabilitySlot"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+  /bot/status:
+    get:
+      operationId: getBotStatus
+      tags: [bot]
+      summary: Obtener estado de conexión del bot
+      responses:
+        "200":
+          description: Estado de conexión
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BotStatus"
 components:
   schemas:
     HealthStatus:
@@ -33,4 +324,264 @@ components:
           type: string
       required:
         - status
+    Error:
+      type: object
+      properties:
+        error:
+          type: string
+      required: [error]
+    Service:
+      type: object
+      properties:
+        id:
+          type: number
+        name:
+          type: string
+        slug:
+          type: string
+        description:
+          type: string
+        price:
+          type: number
+        durationMinutes:
+          type: number
+        category:
+          type: string
+        active:
+          type: boolean
+      required: [id, name, slug, description, price, durationMinutes, category, active]
+    ServiceInput:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 1
+        slug:
+          type: string
+          minLength: 1
+        description:
+          type: string
+        price:
+          type: number
+          minimum: 0
+        durationMinutes:
+          type: number
+          minimum: 1
+        category:
+          type: string
+        active:
+          type: boolean
+      required: [name, slug, description, price, durationMinutes, category]
+    ServiceUpdate:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 1
+        slug:
+          type: string
+          minLength: 1
+        description:
+          type: string
+        price:
+          type: number
+          minimum: 0
+        durationMinutes:
+          type: number
+          minimum: 1
+        category:
+          type: string
+        active:
+          type: boolean
+    Faq:
+      type: object
+      properties:
+        id:
+          type: number
+        serviceId:
+          type: number
+          nullable: true
+        serviceName:
+          type: string
+          nullable: true
+        question:
+          type: string
+        answer:
+          type: string
+        priority:
+          type: number
+        active:
+          type: boolean
+      required: [id, serviceId, serviceName, question, answer, priority, active]
+    FaqInput:
+      type: object
+      properties:
+        serviceId:
+          type: number
+          nullable: true
+        question:
+          type: string
+          minLength: 1
+        answer:
+          type: string
+          minLength: 1
+        priority:
+          type: number
+          minimum: 0
+        active:
+          type: boolean
+      required: [question, answer]
+    FaqUpdate:
+      type: object
+      properties:
+        serviceId:
+          type: number
+          nullable: true
+        question:
+          type: string
+          minLength: 1
+        answer:
+          type: string
+          minLength: 1
+        priority:
+          type: number
+          minimum: 0
+        active:
+          type: boolean
+    AppointmentStatus:
+      type: string
+      enum: [pending, confirmed, cancelled, completed]
+    Appointment:
+      type: object
+      properties:
+        id:
+          type: number
+        clientName:
+          type: string
+        phone:
+          type: string
+        serviceId:
+          type: number
+        serviceName:
+          type: string
+        area:
+          type: string
+        scheduledDate:
+          type: string
+          format: date
+        scheduledTime:
+          type: string
+        status:
+          $ref: "#/components/schemas/AppointmentStatus"
+        notes:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+      required: [id, clientName, phone, serviceId, serviceName, area, scheduledDate, scheduledTime, status, notes, createdAt]
+    AppointmentInput:
+      type: object
+      properties:
+        clientName:
+          type: string
+          minLength: 1
+        phone:
+          type: string
+          minLength: 7
+        serviceId:
+          type: number
+        area:
+          type: string
+        scheduledDate:
+          type: string
+          format: date
+        scheduledTime:
+          type: string
+        status:
+          $ref: "#/components/schemas/AppointmentStatus"
+        notes:
+          type: string
+      required: [clientName, phone, serviceId, area, scheduledDate, scheduledTime]
+    AppointmentUpdate:
+      type: object
+      properties:
+        clientName:
+          type: string
+          minLength: 1
+        phone:
+          type: string
+          minLength: 7
+        serviceId:
+          type: number
+        area:
+          type: string
+        scheduledDate:
+          type: string
+          format: date
+        scheduledTime:
+          type: string
+        status:
+          $ref: "#/components/schemas/AppointmentStatus"
+        notes:
+          type: string
+    AvailabilitySlot:
+      type: object
+      properties:
+        time:
+          type: string
+        available:
+          type: boolean
+      required: [time, available]
+    Dashboard:
+      type: object
+      properties:
+        businessName:
+          type: string
+        todayAppointments:
+          type: number
+        upcomingAppointments:
+          type: number
+        activeServices:
+          type: number
+        faqCount:
+          type: number
+        botConnected:
+          type: boolean
+        nextAppointment:
+          allOf:
+            - $ref: "#/components/schemas/Appointment"
+          nullable: true
+      required: [businessName, todayAppointments, upcomingAppointments, activeServices, faqCount, botConnected, nextAppointment]
+    BotStatus:
+      type: object
+      properties:
+        connected:
+          type: boolean
+        provider:
+          type: string
+        label:
+          type: string
+        webhookReady:
+          type: boolean
+      required: [connected, provider, label, webhookReady]
+  parameters:
+    Id:
+      name: id
+      in: path
+      required: true
+      schema:
+        type: number
+  responses:
+    BadRequest:
+      description: Solicitud inválida
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+    NotFound:
+      description: Recurso no encontrado
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
 
