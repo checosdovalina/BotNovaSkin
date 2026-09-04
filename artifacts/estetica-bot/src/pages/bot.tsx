@@ -43,7 +43,7 @@ export default function Bot() {
   const faqs = useListFaqs(undefined, { query: { queryKey: getListFaqsQueryKey(undefined) } });
   const [messages, setMessages] = useState<Message[]>(initialMessages);
   const [draft, setDraft] = useState('');
-  const [manualSteps, setManualSteps] = useState({ meta: false, secrets: false, webhook: false, subscription: false });
+  const [manualSteps, setManualSteps] = useState({ meta: false, deploy: false, secrets: false, webhook: false, subscription: false });
   const [finalTested, setFinalTested] = useState(false);
   const { toast } = useToast();
 
@@ -52,7 +52,7 @@ export default function Bot() {
   const webhookReady = Boolean(bot?.webhookReady) || manualSteps.webhook;
   const steps = [
     { id: 'meta', done: manualSteps.meta, title: 'Prepara la cuenta en Meta', description: 'Crea o selecciona tu aplicación, agrega WhatsApp y confirma que el número de atención esté listo para Cloud API.' },
-    { id: 'replit', done: healthReady, title: 'Publica la app en Replit', description: 'La integración necesita una URL pública y estable. Comprueba que el servicio esté desplegado antes de registrarlo en Meta.' },
+    { id: 'replit', done: manualSteps.deploy, title: 'Publica la app en Replit', description: 'La integración necesita una URL pública y estable. Comprueba que el servicio esté desplegado antes de registrarlo en Meta.' },
     { id: 'secrets', done: manualSteps.secrets, title: 'Guarda los secretos en Replit', description: 'Añade las variables en Secrets de Replit. Aquí solo usamos nombres de variables: los valores nunca deben viajar por el chat.' },
     { id: 'webhook', done: webhookReady, title: 'Configura y verifica el webhook', description: 'Usa la URL de abajo en la configuración de Meta y completa la verificación con tu token guardado en Secrets.' },
     { id: 'subscription', done: manualSteps.subscription, title: 'Suscribe los mensajes', description: 'En los campos del webhook de Meta, activa el evento messages para que el bot pueda recibir nuevas conversaciones.' },
@@ -73,7 +73,7 @@ export default function Bot() {
       toast({ title: 'No se pudo copiar', description: 'Copia el valor manualmente desde este panel.' });
     }
   };
-  const toggleStep = (id: 'meta' | 'secrets' | 'webhook' | 'subscription') => setManualSteps((current) => ({ ...current, [id]: !current[id] }));
+  const toggleStep = (id: 'meta' | 'deploy' | 'secrets' | 'webhook' | 'subscription') => setManualSteps((current) => ({ ...current, [id]: !current[id] }));
   const refreshAll = async () => {
     await Promise.all([status.refetch(), health.refetch(), faqs.refetch()]);
     toast({ title: 'Estado actualizado', description: 'Comprobamos de nuevo la conexión y la configuración.' });
@@ -122,7 +122,8 @@ export default function Bot() {
 
           <StepCard number="2" icon={<Cloud size={18} />} title={steps[1].title} description={steps[1].description} done={steps[1].done}>
             <div className="flex flex-wrap items-center gap-3">
-              <div className={`flex items-center gap-2 rounded-lg px-2.5 py-1.5 text-xs ${health.isError ? 'bg-destructive/10 text-destructive' : healthReady ? 'bg-primary/10 text-primary' : 'bg-muted text-muted-foreground'}`}><span className={`h-1.5 w-1.5 rounded-full ${healthReady ? 'bg-primary' : health.isError ? 'bg-destructive' : 'bg-muted-foreground/40'}`} />{health.isLoading ? 'Comprobando servicio' : health.isError ? 'No pudimos comprobarlo' : healthReady ? 'Servicio público disponible' : 'Esperando respuesta del servicio'}</div>
+              <div className={`flex items-center gap-2 rounded-lg px-2.5 py-1.5 text-xs ${health.isError ? 'bg-destructive/10 text-destructive' : healthReady ? 'bg-primary/10 text-primary' : 'bg-muted text-muted-foreground'}`}><span className={`h-1.5 w-1.5 rounded-full ${healthReady ? 'bg-primary' : health.isError ? 'bg-destructive' : 'bg-muted-foreground/40'}`} />{health.isLoading ? 'Comprobando servicio' : health.isError ? 'No pudimos comprobarlo' : healthReady ? 'API operativa' : 'Esperando respuesta del servicio'}</div>
+              <Button variant="ghost" className="h-9 px-3 text-xs" onClick={() => toggleStep('deploy')} data-testid="button-toggle-deploy">{manualSteps.deploy ? 'Marcar como pendiente' : 'Ya publiqué la app'}</Button>
               {health.isError && <Button variant="ghost" className="h-9 px-3 text-xs" onClick={() => void health.refetch()} data-testid="button-retry-health"><RefreshCw size={14} />Reintentar</Button>}
               <a href="https://docs.replit.com/hosting/deployments" target="_blank" rel="noreferrer" className="inline-flex items-center gap-1.5 text-xs font-semibold text-primary hover:underline" data-testid="link-replit-docs">Guía de despliegue <ExternalLink size={13} /></a>
             </div>
