@@ -1,0 +1,138 @@
+
+sudo -u postgres psql -tAc \
+"SELECT 1 FROM pg_database WHERE datname='botnovaskin';"
+1
+1
+[root@localhost botnovaskin]# nano /etc/botnovaskin.env
+[root@localhost botnovaskin]# chmod 600 /etc/botnovaskin.env
+chown root:root /etc/botnovaskin.env
+[root@localhost botnovaskin]# curl -4 ifconfig.me
+74.208.13.243[root@localhost botnovaskin]# 
+Display all 1227 possibilities? (y or n)
+[root@localhost botnovaskin]# dnf install -y bind-utils
+dig +short apineoskin.nexxo.com.mx
+Last metadata expiration check: 2:43:29 ago on Wed 09 Sep 2026 07:59:31 PM UTC.
+Dependencies resolved.
+================================================================================
+ Package           Arch        Version                     Repository      Size
+================================================================================
+Installing:
+ bind-utils        x86_64      32:9.16.23-40.el9_8.8       appstream      199 k
+Installing dependencies:
+ bind-libs         x86_64      32:9.16.23-40.el9_8.8       appstream      1.2 M
+ bind-license      noarch      32:9.16.23-40.el9_8.8       appstream       13 k
+ fstrm             x86_64      0.6.1-3.el9                 appstream       27 k
+ libuv             x86_64      1:1.42.0-2.el9_4            appstream      146 k
+ protobuf-c        x86_64      1.3.3-13.el9                baseos          34 k
+
+Transaction Summary
+================================================================================
+Install  6 Packages
+
+Total download size: 1.7 M
+Installed size: 4.6 M
+Downloading Packages:
+(1/6): bind-license-9.16.23-40.el9_8.8.noarch.r 183 kB/s |  13 kB     00:00    
+(2/6): fstrm-0.6.1-3.el9.x86_64.rpm             398 kB/s |  27 kB     00:00    
+(3/6): bind-utils-9.16.23-40.el9_8.8.x86_64.rpm 1.3 MB/s | 199 kB     00:00    
+(4/6): bind-libs-9.16.23-40.el9_8.8.x86_64.rpm  7.2 MB/s | 1.2 MB     00:00    
+(5/6): libuv-1.42.0-2.el9_4.x86_64.rpm          1.5 MB/s | 146 kB     00:00    
+(6/6): protobuf-c-1.3.3-13.el9.x86_64.rpm       414 kB/s |  34 kB     00:00    
+--------------------------------------------------------------------------------
+Total                                           3.4 MB/s | 1.7 MB     00:00     
+Running transaction check
+Transaction check succeeded.
+Running transaction test
+Transaction test succeeded.
+Running transaction
+  Preparing        :                                                        1/1 
+  Installing       : protobuf-c-1.3.3-13.el9.x86_64                         1/6 
+  Installing       : libuv-1:1.42.0-2.el9_4.x86_64                          2/6 
+  Installing       : fstrm-0.6.1-3.el9.x86_64                               3/6 
+  Installing       : bind-license-32:9.16.23-40.el9_8.8.noarch              4/6 
+  Installing       : bind-libs-32:9.16.23-40.el9_8.8.x86_64                 5/6 
+  Installing       : bind-utils-32:9.16.23-40.el9_8.8.x86_64                6/6 
+  Running scriptlet: bind-utils-32:9.16.23-40.el9_8.8.x86_64                6/6 
+  Verifying        : bind-libs-32:9.16.23-40.el9_8.8.x86_64                 1/6 
+  Verifying        : bind-license-32:9.16.23-40.el9_8.8.noarch              2/6 
+  Verifying        : bind-utils-32:9.16.23-40.el9_8.8.x86_64                3/6 
+  Verifying        : fstrm-0.6.1-3.el9.x86_64                               4/6 
+  Verifying        : libuv-1:1.42.0-2.el9_4.x86_64                          5/6 
+  Verifying        : protobuf-c-1.3.3-13.el9.x86_64                         6/6 
+
+Installed:
+  bind-libs-32:9.16.23-40.el9_8.8.x86_64                                        
+  bind-license-32:9.16.23-40.el9_8.8.noarch                                     
+  bind-utils-32:9.16.23-40.el9_8.8.x86_64                                       
+  fstrm-0.6.1-3.el9.x86_64                                                      
+  libuv-1:1.42.0-2.el9_4.x86_64                                                 
+  protobuf-c-1.3.3-13.el9.x86_64                                                
+
+Complete!
+74.208.13.243
+[root@localhost botnovaskin]# ls -la /opt/botnovaskin/artifacts/estetica-bot/dist/public
+total 12
+drwxr-xr-x. 3 botnovaskin botnovaskin   75 Sep  9 22:37 .
+drwxr-xr-x. 3 botnovaskin botnovaskin   20 Sep  9 22:37 ..
+drwxr-xr-x. 2 botnovaskin botnovaskin   57 Sep  9 22:37 assets
+-rw-r--r--. 1 botnovaskin botnovaskin  163 Sep  9 22:37 favicon.svg
+-rw-r--r--. 1 botnovaskin botnovaskin 1390 Sep  9 22:37 index.html
+-rw-r--r--. 1 botnovaskin botnovaskin   23 Sep  9 22:37 robots.txt
+[root@localhost botnovaskin]# ls -la /opt/botnovaskin/artifacts/api-server/dist
+total 7216
+drwxr-xr-x. 2 botnovaskin botnovaskin    4096 Sep  9 22:37 .
+drwxr-xr-x. 6 botnovaskin botnovaskin     131 Sep  9 22:37 ..
+-rw-r--r--. 1 botnovaskin botnovaskin 2286115 Sep  9 22:37 index.mjs
+-rw-r--r--. 1 botnovaskin botnovaskin 3928889 Sep  9 22:37 index.mjs.map
+-rw-r--r--. 1 botnovaskin botnovaskin  145458 Sep  9 22:37 pino-file.mjs
+-rw-r--r--. 1 botnovaskin botnovaskin  234535 Sep  9 22:37 pino-file.mjs.map
+-rw-r--r--. 1 botnovaskin botnovaskin  117098 Sep  9 22:37 pino-pretty.mjs
+-rw-r--r--. 1 botnovaskin botnovaskin  208440 Sep  9 22:37 pino-pretty.mjs.map
+-rw-r--r--. 1 botnovaskin botnovaskin  157096 Sep  9 22:37 pino-worker.mjs
+-rw-r--r--. 1 botnovaskin botnovaskin  263027 Sep  9 22:37 pino-worker.mjs.map
+-rw-r--r--. 1 botnovaskin botnovaskin    7501 Sep  9 22:37 thread-stream-worker.mjs
+-rw-r--r--. 1 botnovaskin botnovaskin   12320 Sep  9 22:37 thread-stream-worker.mjs.map
+[root@localhost botnovaskin]# grep -RIn "server_name" /etc/nginx/conf.d
+/etc/nginx/conf.d/nexxo.conf:5:    server_name nexxo.com.mx www.nexxo.com.mx *.nexxo.com.mx;
+/etc/nginx/conf.d/nexxo.conf:13:    server_name nexxo.com.mx www.nexxo.com.mx *.nexxo.com.mx;
+/etc/nginx/conf.d/ots-energy.conf:2:    server_name events-ots.com www.events-ots.com;
+/etc/nginx/conf.d/ots-energy.conf:35:    server_name events-ots.com www.events-ots.com;
+/etc/nginx/conf.d/microsip.conf:2:    server_name microsipdashboard.events-ots.com;
+/etc/nginx/conf.d/microsip.conf:35:    server_name microsipdashboard.events-ots.com;
+/etc/nginx/conf.d/00-nexxobi.conf:3:    server_name nexxobi.com.mx *.nexxobi.com.mx;
+/etc/nginx/conf.d/00-nexxobi.conf:9:    server_name nexxobi.com.mx *.nexxobi.com.mx;
+[root@localhost botnovaskin]# cd /opt/botnovaskin
+
+runuser -u botnovaskin -- sh -c \
+'cd /opt/botnovaskin && NODE_ENV=production pnpm --filter @workspace/api-server run build'
+
+> @workspace/api-server@0.0.0 build /opt/botnovaskin/artifacts/api-server
+> node ./build.mjs
+
+
+  dist/index.mjs                       2.2mb ⚠️
+  dist/pino-worker.mjs               153.4kb
+  dist/pino-file.mjs                 142.0kb
+  dist/pino-pretty.mjs               114.4kb
+  dist/thread-stream-worker.mjs        7.3kb
+  dist/index.mjs.map                   3.7mb
+  dist/pino-worker.mjs.map           256.9kb
+  dist/pino-file.mjs.map             229.0kb
+  dist/pino-pretty.mjs.map           203.6kb
+  dist/thread-stream-worker.mjs.map   12.0kb
+
+⚡ Done in 343ms
+[root@localhost botnovaskin]# runuser -u botnovaskin -- sh -c \
+'cd /opt/botnovaskin && NODE_ENV=production PORT=3000 BASE_PATH=/ pnpm --filter @workspace/estetica-bot run build'
+
+> @workspace/estetica-bot@0.0.0 build /opt/botnovaskin/artifacts/estetica-bot
+> vite build --config vite.config.ts
+
+vite v7.3.6 building client environment for production...
+src/components/ui/tooltip.tsx (2:0): Error when using sourcemap for reporting an error: Can't resolve original location of error.
+✓ 1779 modules transformed.
+dist/public/index.html                   1.39 kB │ gzip:   0.55 kB
+dist/public/assets/index-BIYiUkBj.css  114.53 kB │ gzip:  18.86 kB
+dist/public/assets/index-D-KX_3Pn.js   413.29 kB │ gzip: 127.30 kB
+✓ built in 3.88s
+[root@localhost botnovaskin]# 
