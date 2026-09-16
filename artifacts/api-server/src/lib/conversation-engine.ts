@@ -869,7 +869,14 @@ export async function processConversationMessage(input: {
     if (stateResult) {
       result = stateResult;
     } else {
+      const valuationPriceIntent =
+        normalized.includes("valoracion") &&
+        (normalized.includes("precio") ||
+          normalized.includes("costo") ||
+          normalized.includes("cuesta") ||
+          normalized.includes("cuanto sale"));
       const actionIntent =
+        valuationPriceIntent ||
         normalized === "2" ||
         normalized === "3" ||
         normalized === "4" ||
@@ -895,6 +902,14 @@ export async function processConversationMessage(input: {
               }
             : conversation.context ?? {},
           `${faq.answer}\n\nEsta información es general y no sustituye una valoración profesional.`,
+        );
+      } else if (valuationPriceIntent) {
+        result = await transition(
+          conversation,
+          "idle",
+          conversation.context ?? {},
+          "El costo de la valoración debe confirmarlo recepción, ya que puede depender del tratamiento o especialista. Ya derivé tu conversación para que te compartan el precio vigente.",
+          "human",
         );
       } else if (
       normalized === "1" ||
