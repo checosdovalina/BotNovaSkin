@@ -256,6 +256,8 @@ async function selectService(message: string) {
 }
 
 async function findFaq(message: string): Promise<string | undefined> {
+  const normalizedMessage = normalize(message);
+  const definitionIntent = /^que (es|son)\b/.test(normalizedMessage);
   const messageTokens = new Set(tokens(message));
   if (messageTokens.size === 0) return undefined;
   const rows = await db
@@ -272,6 +274,9 @@ async function findFaq(message: string): Promise<string | undefined> {
 
   let best: { answer: string; score: number } | undefined;
   for (const row of rows) {
+    const definitionQuestion = /^que (es|son)\b/.test(
+      normalize(row.question),
+    );
     const questionTokens = tokens(
       `${row.question} ${row.serviceName ?? ""}`,
     );
@@ -287,9 +292,13 @@ async function findFaq(message: string): Promise<string | undefined> {
         messageTokens.has(token),
       ),
     ).size;
-    const score = questionMatches * 3 + answerMatches;
+    const score =
+      questionMatches * 3 +
+      answerMatches +
+      (definitionIntent && definitionQuestion ? 10 : 0);
     if (
-      totalMatches >= 2 &&
+      (totalMatches >= 2 ||
+        (definitionIntent && definitionQuestion && totalMatches >= 1)) &&
       (!best || score > best.score)
     ) {
       best = { answer: row.answer, score };
