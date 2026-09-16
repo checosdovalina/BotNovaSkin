@@ -18,6 +18,7 @@ import {
   type ConversationContext,
   type Conversation,
 } from "@workspace/db";
+import { answerWithApprovedKnowledge } from "./ai-assistant";
 
 const appointmentTimes = [
   "09:00",
@@ -78,6 +79,7 @@ const stopWords = new Set([
   "cual",
   "de",
   "del",
+  "durante",
   "el",
   "en",
   "es",
@@ -90,6 +92,8 @@ const stopWords = new Set([
   "por",
   "que",
   "se",
+  "tratamiento",
+  "aplicacion",
   "un",
   "una",
   "y",
@@ -875,8 +879,17 @@ export async function processConversationMessage(input: {
           normalized.includes("costo") ||
           normalized.includes("cuesta") ||
           normalized.includes("cuanto sale"));
+      const catalogIntent =
+        normalized === "1" ||
+        /^(tratamiento|tratamientos|servicio|servicios)$/.test(normalized) ||
+        normalized.includes("ver tratamientos") ||
+        normalized.includes("que tratamientos") ||
+        normalized.includes("lista de tratamientos") ||
+        normalized.includes("que servicios") ||
+        normalized.includes("lista de servicios");
       const actionIntent =
         valuationPriceIntent ||
+        catalogIntent ||
         normalized === "2" ||
         normalized === "3" ||
         normalized === "4" ||
@@ -891,7 +904,35 @@ export async function processConversationMessage(input: {
       const faq = actionIntent
         ? undefined
         : await findFaq(input.message, conversation.context?.serviceName);
-      if (faq) {
+      const ai = actionIntent
+        ? { kind: "unavailable" as const }
+        : await answerWithApprovedKnowledge({
+            conversationId: conversation.id,
+            message: input.message,
+            serviceId: conversation.context?.serviceId,
+            serviceName: conversation.context?.serviceName,
+          });
+      if (ai.kind === "answer") {
+        result = await transition(
+          conversation,
+          "idle",
+          ai.serviceId
+            ? {
+                serviceId: ai.serviceId,
+                serviceName: ai.serviceName,
+              }
+            : conversation.context ?? {},
+          `${ai.answer}\n\nEsta información es general y no sustituye una valoración profesional.`,
+        );
+      } else if (ai.kind === "handoff") {
+        result = await transition(
+          conversation,
+          "idle",
+          conversation.context ?? {},
+          "No tengo información aprobada suficiente para responderte correctamente. Ya canalicé tu conversación con recepción para que una persona te ayude.",
+          "human",
+        );
+      } else if (faq) {
         result = await transition(
           conversation,
           "idle",
@@ -912,8 +953,7 @@ export async function processConversationMessage(input: {
           "human",
         );
       } else if (
-      normalized === "1" ||
-      normalized.includes("tratamiento") ||
+      catalogIntent ||
       normalized.includes("precio") ||
       normalized.includes("cuanto cuesta") ||
       normalized.includes("servicio")
@@ -965,6 +1005,14 @@ export async function processConversationMessage(input: {
                 ? currency(selected.price)
                 : "se confirma en valoración"
             }.\n\nEscribe *cita* si deseas agendar.`,
+          );
+        } else if (ai.kind === "no_knowledge") {
+          result = await transition(
+            conversation,
+            "idle",
+            conversation.context ?? {},
+            "No tengo información aprobada suficiente para responderte correctamente. Ya canalicé tu conversación con recepción para que una persona te ayude.",
+            "human",
           );
         } else {
           result = await transition(
