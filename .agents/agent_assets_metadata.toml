@@ -1,0 +1,16 @@
+uploads = []
+generated = []
+
+[[outputs]]
+id = "-qjNjOCeUbjMSS_9rq0Rb"
+uri = "file://exports/novaskin-faqs.sql"
+type = "unspecified"
+title = "Importación de preguntas NovaSkin"
+description = "Archivo SQL idempotente con las 190 preguntas del PDF, listo para cargar en PostgreSQL en la VPS."
+logical_id = "dd3ad599-bc36-495c-81d4-beeefaf45750"
+content_hash = "sha256:d636be90fd9d747ba6c0aa3cd39cae63f6f954db2714728172cfe00fe384ab46"
+size = 95800
+mtime_ms = 1789521953373
+storage_uri = "gcs://replit-rams-assets-worf/rams/assets/repl:4b76fb10-c5d6-4a93-9606-4b4cf6395248/dd3ad599-bc36-495c-81d4-beeefaf45750/8c903f0c-5689-40a5-a482-f9cf650da6d3"
+storage_version_token = "1789522101707245"
+content_type = "application/octet-stream"

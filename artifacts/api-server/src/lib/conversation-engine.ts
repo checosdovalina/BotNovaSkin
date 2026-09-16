@@ -76,7 +76,6 @@ const stopWords = new Set([
   "como",
   "con",
   "cual",
-  "cuando",
   "de",
   "del",
   "el",
@@ -113,9 +112,23 @@ function normalize(value: string): string {
 }
 
 function tokens(value: string): string[] {
+  const aliases: Record<string, string> = {
+    costo: "precio",
+    costos: "precio",
+    cuesta: "precio",
+    cuestan: "precio",
+    ven: "notar",
+    veo: "notar",
+    ver: "notar",
+    verse: "notar",
+    notan: "notar",
+    noto: "notar",
+    precios: "precio",
+  };
   return normalize(value)
     .split(/\s+/)
-    .filter((token) => token.length > 2 && !stopWords.has(token));
+    .filter((token) => token.length > 2 && !stopWords.has(token))
+    .map((token) => aliases[token] ?? (token.length > 4 && token.endsWith("s") ? token.slice(0, -1) : token));
 }
 
 function currency(value: number): string {
@@ -246,19 +259,37 @@ async function findFaq(message: string): Promise<string | undefined> {
   const messageTokens = new Set(tokens(message));
   if (messageTokens.size === 0) return undefined;
   const rows = await db
-    .select()
+    .select({
+      answer: faqsTable.answer,
+      question: faqsTable.question,
+      priority: faqsTable.priority,
+      serviceName: servicesTable.name,
+    })
     .from(faqsTable)
+    .leftJoin(servicesTable, eq(faqsTable.serviceId, servicesTable.id))
     .where(eq(faqsTable.active, true))
     .orderBy(desc(faqsTable.priority));
 
   let best: { answer: string; score: number } | undefined;
   for (const row of rows) {
-    const questionTokens = tokens(row.question);
-    const matches = questionTokens.filter((token) => messageTokens.has(token));
-    const score = matches.length / Math.max(questionTokens.length, 1);
+    const questionTokens = tokens(
+      `${row.question} ${row.serviceName ?? ""}`,
+    );
+    const answerTokens = tokens(row.answer);
+    const questionMatches = new Set(
+      questionTokens.filter((token) => messageTokens.has(token)),
+    ).size;
+    const answerMatches = new Set(
+      answerTokens.filter((token) => messageTokens.has(token)),
+    ).size;
+    const totalMatches = new Set(
+      [...questionTokens, ...answerTokens].filter((token) =>
+        messageTokens.has(token),
+      ),
+    ).size;
+    const score = questionMatches * 3 + answerMatches;
     if (
-      matches.length >= 2 &&
-      score >= 0.3 &&
+      totalMatches >= 2 &&
       (!best || score > best.score)
     ) {
       best = { answer: row.answer, score };
@@ -801,49 +832,8 @@ export async function processConversationMessage(input: {
     const stateResult = await processState(conversation, input.message);
     if (stateResult) {
       result = stateResult;
-    } else if (
-      normalized === "1" ||
-      normalized.includes("tratamiento") ||
-      normalized.includes("precio") ||
-      normalized.includes("cuanto cuesta") ||
-      normalized.includes("servicio")
-    ) {
-      const selected = await selectService(input.message);
-      result = await transition(
-        conversation,
-        "idle",
-        {},
-        selected
-          ? `*${selected.name}*\n${selected.description}\nDuración aproximada: ${selected.durationMinutes} minutos.\nPrecio: ${
-              selected.price > 0
-                ? currency(selected.price)
-                : "se confirma en valoración"
-            }.\n\nEscribe *cita* si deseas agendar.`
-          : await serviceList(),
-      );
-    } else if (
-      normalized === "2" ||
-      normalized.includes("agendar") ||
-      normalized.includes("reservar") ||
-      normalized === "cita" ||
-      normalized.includes("hacer una cita")
-    ) {
-      result = await startAppointment(conversation);
-    } else if (
-      normalized === "3" ||
-      normalized.includes("cancelar cita") ||
-      normalized.includes("cancelar mi cita")
-    ) {
-      result = await startExistingAppointmentFlow(conversation, "cancel");
-    } else if (
-      normalized === "4" ||
-      normalized.includes("reprogram") ||
-      normalized.includes("cambiar cita")
-    ) {
-      result = await startExistingAppointmentFlow(conversation, "reschedule");
     } else {
       const faq = await findFaq(input.message);
-      const selected = await selectService(input.message);
       if (faq) {
         result = await transition(
           conversation,
@@ -851,24 +841,67 @@ export async function processConversationMessage(input: {
           {},
           `${faq}\n\nEsta información es general y no sustituye una valoración profesional.`,
         );
-      } else if (selected) {
+      } else if (
+      normalized === "1" ||
+      normalized.includes("tratamiento") ||
+      normalized.includes("precio") ||
+      normalized.includes("cuanto cuesta") ||
+      normalized.includes("servicio")
+      ) {
+        const selected = await selectService(input.message);
         result = await transition(
           conversation,
           "idle",
           {},
-          `*${selected.name}*\n${selected.description}\nDuración aproximada: ${selected.durationMinutes} minutos.\nPrecio: ${
-            selected.price > 0
-              ? currency(selected.price)
-              : "se confirma en valoración"
-          }.\n\nEscribe *cita* si deseas agendar.`,
+          selected
+            ? `*${selected.name}*\n${selected.description}\nDuración aproximada: ${selected.durationMinutes} minutos.\nPrecio: ${
+                selected.price > 0
+                  ? currency(selected.price)
+                  : "se confirma en valoración"
+              }.\n\nEscribe *cita* si deseas agendar.`
+            : await serviceList(),
         );
+      } else if (
+        normalized === "2" ||
+        normalized.includes("agendar") ||
+        normalized.includes("reservar") ||
+        normalized === "cita" ||
+        normalized.includes("hacer una cita")
+      ) {
+        result = await startAppointment(conversation);
+      } else if (
+        normalized === "3" ||
+        normalized.includes("cancelar cita") ||
+        normalized.includes("cancelar mi cita")
+      ) {
+        result = await startExistingAppointmentFlow(conversation, "cancel");
+      } else if (
+        normalized === "4" ||
+        normalized.includes("reprogram") ||
+        normalized.includes("cambiar cita")
+      ) {
+        result = await startExistingAppointmentFlow(conversation, "reschedule");
       } else {
-        result = await transition(
-          conversation,
-          "idle",
-          {},
-          `No encontré una respuesta exacta. Puedes escribir *tratamientos*, *cita*, *cancelar*, *reprogramar* o *recepción*.\n\n${menu}`,
-        );
+        const selected = await selectService(input.message);
+        if (selected) {
+          result = await transition(
+            conversation,
+            "idle",
+            {},
+            `*${selected.name}*\n${selected.description}\nDuración aproximada: ${selected.durationMinutes} minutos.\nPrecio: ${
+              selected.price > 0
+                ? currency(selected.price)
+                : "se confirma en valoración"
+            }.\n\nEscribe *cita* si deseas agendar.`,
+          );
+        } else {
+          result = await transition(
+            conversation,
+            "idle",
+            {},
+            `No encontré una respuesta exacta. Puedes escribir *tratamientos*, *cita*, *cancelar*, *reprogramar* o *recepción*.\n\n${menu}`,
+          );
+        }
       }
     }
   }

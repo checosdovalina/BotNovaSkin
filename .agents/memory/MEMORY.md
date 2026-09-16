@@ -1,2 +1,3 @@
 - [OpenAPI y Zod](openapi-zod.md) — en este workspace, los enteros OpenAPI generan zod.int incompatible con el Zod 3 instalado; usar números o revisar el catálogo antes de codegen.
 - [VPS AlmaLinux compartida](vps-deployment.md) — esta VPS ya aloja Nginx y PostgreSQL; desplegar BotNovaSkin con servicio, puerto y bloque Nginx aislados.
+- [Coincidencia de FAQs](faq-matching.md) — las preguntas genéricas se repiten entre tratamientos; usar el tratamiento para desambiguar y mantener la derivación clínica por encima de las FAQs.
