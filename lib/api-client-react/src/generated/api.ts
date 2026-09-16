@@ -25,6 +25,11 @@ import type {
   AppointmentUpdate,
   AvailabilitySlot,
   BadRequestResponse,
+  BotConversation,
+  BotConversationUpdate,
+  BotConversationUpdateResponse,
+  BotSimulationInput,
+  BotSimulationResponse,
   BotStatus,
   Dashboard,
   Error,
@@ -34,6 +39,7 @@ import type {
   GetAvailabilityParams,
   HealthStatus,
   ListAppointmentsParams,
+  ListBotConversationsParams,
   ListFaqsParams,
   NotFoundResponse,
   Service,
@@ -1199,4 +1205,231 @@ export function useGetBotStatus<TData = Awaited<ReturnType<typeof getBotStatus>>
 
 
 
+
+export const getSimulateBotUrl = () => {
+
+
+
+
+  return `/api/bot/simulate`
+}
+
+/**
+ * @summary Probar el motor de conversación
+ */
+export const simulateBot = async (botSimulationInput: BotSimulationInput, options?: Parameters<typeof customFetch>[1]): Promise<BotSimulationResponse> => {
+
+  return customFetch<BotSimulationResponse>(getSimulateBotUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(botSimulationInput)
+  }
+);}
+
+
+
+
+
+export const getSimulateBotMutationOptions = <TError = ErrorType<BadRequestResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof simulateBot>>, TError,{data: BodyType<BotSimulationInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof simulateBot>>, TError,{data: BodyType<BotSimulationInput>}, TContext> => {
+
+const mutationKey = ['simulateBot'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof simulateBot>>, {data: BodyType<BotSimulationInput>}> = (props) => {
+          const {data} = props ?? {};
+
+          return  simulateBot(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type SimulateBotMutationResult = NonNullable<Awaited<ReturnType<typeof simulateBot>>>
+    export type SimulateBotMutationBody = BodyType<BotSimulationInput>
+    export type SimulateBotMutationError = ErrorType<BadRequestResponse>
+
+    /**
+ * @summary Probar el motor de conversación
+ */
+export const useSimulateBot = <TError = ErrorType<BadRequestResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof simulateBot>>, TError,{data: BodyType<BotSimulationInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof simulateBot>>,
+        TError,
+        {data: BodyType<BotSimulationInput>},
+        TContext
+      > => {
+      return useMutation(getSimulateBotMutationOptions(options));
+    }
+
+export const getListBotConversationsUrl = (params?: ListBotConversationsParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/bot/conversations?${stringifiedParams}` : `/api/bot/conversations`
+}
+
+/**
+ * @summary Listar conversaciones y derivaciones
+ */
+export const listBotConversations = async (params?: ListBotConversationsParams, options?: Parameters<typeof customFetch>[1]): Promise<BotConversation[]> => {
+
+  return customFetch<BotConversation[]>(getListBotConversationsUrl(params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getListBotConversationsQueryKey = (params?: ListBotConversationsParams,) => {
+    return [
+    `/api/bot/conversations`, ...(params ? [params] : [])
+    ] as const;
+    }
+
+
+export const getListBotConversationsQueryOptions = <TData = Awaited<ReturnType<typeof listBotConversations>>, TError = ErrorType<unknown>>(params?: ListBotConversationsParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listBotConversations>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListBotConversationsQueryKey(params);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listBotConversations>>> = ({ signal }) => listBotConversations(params, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listBotConversations>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type ListBotConversationsQueryResult = NonNullable<Awaited<ReturnType<typeof listBotConversations>>>
+export type ListBotConversationsQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary Listar conversaciones y derivaciones
+ */
+
+export function useListBotConversations<TData = Awaited<ReturnType<typeof listBotConversations>>, TError = ErrorType<unknown>>(
+ params?: ListBotConversationsParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listBotConversations>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getListBotConversationsQueryOptions(params,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getUpdateBotConversationUrl = (id: number,) => {
+
+
+
+
+  return `/api/bot/conversations/${id}`
+}
+
+/**
+ * @summary Actualizar el estado de una conversación
+ */
+export const updateBotConversation = async (id: number,
+    botConversationUpdate: BotConversationUpdate, options?: Parameters<typeof customFetch>[1]): Promise<BotConversationUpdateResponse> => {
+
+  return customFetch<BotConversationUpdateResponse>(getUpdateBotConversationUrl(id),
+  {
+    ...options,
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(botConversationUpdate)
+  }
+);}
+
+
+
+
+
+export const getUpdateBotConversationMutationOptions = <TError = ErrorType<BadRequestResponse | NotFoundResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateBotConversation>>, TError,{id: number;data: BodyType<BotConversationUpdate>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof updateBotConversation>>, TError,{id: number;data: BodyType<BotConversationUpdate>}, TContext> => {
+
+const mutationKey = ['updateBotConversation'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof updateBotConversation>>, {id: number;data: BodyType<BotConversationUpdate>}> = (props) => {
+          const {id,data} = props ?? {};
+
+          return  updateBotConversation(id,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type UpdateBotConversationMutationResult = NonNullable<Awaited<ReturnType<typeof updateBotConversation>>>
+    export type UpdateBotConversationMutationBody = BodyType<BotConversationUpdate>
+    export type UpdateBotConversationMutationError = ErrorType<BadRequestResponse | NotFoundResponse>
+
+    /**
+ * @summary Actualizar el estado de una conversación
+ */
+export const useUpdateBotConversation = <TError = ErrorType<BadRequestResponse | NotFoundResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateBotConversation>>, TError,{id: number;data: BodyType<BotConversationUpdate>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof updateBotConversation>>,
+        TError,
+        {id: number;data: BodyType<BotConversationUpdate>},
+        TContext
+      > => {
+      return useMutation(getUpdateBotConversationMutationOptions(options));
+    }
 

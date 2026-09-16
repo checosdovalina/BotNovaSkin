@@ -349,3 +349,63 @@ export const GetBotStatusResponse = zod.object({
 })
 
 
+/**
+ * @summary Probar el motor de conversación
+ */
+export const simulateBotBodyMessageMax = 2000;
+
+export const simulateBotBodySessionIdMax = 100;
+
+
+
+export const SimulateBotBody = zod.object({
+  "message": zod.string().min(1).max(simulateBotBodyMessageMax),
+  "sessionId": zod.string().min(1).max(simulateBotBodySessionIdMax),
+  "reset": zod.boolean().optional()
+})
+
+export const SimulateBotResponse = zod.object({
+  "reply": zod.string(),
+  "handoff": zod.boolean(),
+  "state": zod.string(),
+  "conversationId": zod.number()
+})
+
+
+/**
+ * @summary Listar conversaciones y derivaciones
+ */
+export const ListBotConversationsQueryParams = zod.object({
+  "status": zod.enum(['bot', 'human', 'closed']).optional()
+})
+
+export const ListBotConversationsResponseItem = zod.object({
+  "id": zod.number(),
+  "phone": zod.string(),
+  "clientName": zod.string().nullable(),
+  "status": zod.enum(['bot', 'human', 'closed']),
+  "state": zod.string(),
+  "lastMessage": zod.string(),
+  "lastMessageAt": zod.coerce.date(),
+  "messageCount": zod.number()
+})
+export const ListBotConversationsResponse = zod.array(ListBotConversationsResponseItem)
+
+
+/**
+ * @summary Actualizar el estado de una conversación
+ */
+export const UpdateBotConversationParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const UpdateBotConversationBody = zod.object({
+  "status": zod.enum(['bot', 'human', 'closed'])
+})
+
+export const UpdateBotConversationResponse = zod.object({
+  "id": zod.number(),
+  "status": zod.enum(['bot', 'human', 'closed'])
+})
+
+

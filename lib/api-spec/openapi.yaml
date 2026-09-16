@@ -315,6 +315,70 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/BotStatus"
+  /bot/simulate:
+    post:
+      operationId: simulateBot
+      tags: [bot]
+      summary: Probar el motor de conversación
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/BotSimulationInput"
+      responses:
+        "200":
+          description: Respuesta generada por el bot
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BotSimulationResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+  /bot/conversations:
+    get:
+      operationId: listBotConversations
+      tags: [bot]
+      summary: Listar conversaciones y derivaciones
+      parameters:
+        - name: status
+          in: query
+          required: false
+          schema:
+            $ref: "#/components/schemas/ConversationStatus"
+      responses:
+        "200":
+          description: Conversaciones recientes
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/BotConversation"
+  /bot/conversations/{id}:
+    patch:
+      operationId: updateBotConversation
+      tags: [bot]
+      summary: Actualizar el estado de una conversación
+      parameters:
+        - $ref: "#/components/parameters/Id"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/BotConversationUpdate"
+      responses:
+        "200":
+          description: Estado actualizado
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BotConversationUpdateResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "404":
+          $ref: "#/components/responses/NotFound"
 components:
   schemas:
     HealthStatus:
@@ -564,6 +628,71 @@ components:
         webhookReady:
           type: boolean
       required: [connected, provider, label, webhookReady]
+    ConversationStatus:
+      type: string
+      enum: [bot, human, closed]
+    BotSimulationInput:
+      type: object
+      properties:
+        message:
+          type: string
+          minLength: 1
+          maxLength: 2000
+        sessionId:
+          type: string
+          minLength: 1
+          maxLength: 100
+        reset:
+          type: boolean
+      required: [message, sessionId]
+    BotSimulationResponse:
+      type: object
+      properties:
+        reply:
+          type: string
+        handoff:
+          type: boolean
+        state:
+          type: string
+        conversationId:
+          type: number
+      required: [reply, handoff, state, conversationId]
+    BotConversation:
+      type: object
+      properties:
+        id:
+          type: number
+        phone:
+          type: string
+        clientName:
+          type: string
+          nullable: true
+        status:
+          $ref: "#/components/schemas/ConversationStatus"
+        state:
+          type: string
+        lastMessage:
+          type: string
+        lastMessageAt:
+          type: string
+          format: date-time
+        messageCount:
+          type: number
+      required: [id, phone, clientName, status, state, lastMessage, lastMessageAt, messageCount]
+    BotConversationUpdate:
+      type: object
+      properties:
+        status:
+          $ref: "#/components/schemas/ConversationStatus"
+      required: [status]
+    BotConversationUpdateResponse:
+      type: object
+      properties:
+        id:
+          type: number
+        status:
+          $ref: "#/components/schemas/ConversationStatus"
+      required: [id, status]
   parameters:
     Id:
       name: id

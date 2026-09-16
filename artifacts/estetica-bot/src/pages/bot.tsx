@@ -1,13 +1,18 @@
-import { ArrowUpRight, Check, CheckCheck, Clipboard, Cloud, Code2, ExternalLink, FileKey2, Flag, Globe2, Info, Link2, MessageCircle, RefreshCw, Send, ShieldAlert, ShieldCheck, TestTube2, Wifi } from 'lucide-react';
-import { useState, type ReactNode } from 'react';
-import { getGetBotStatusQueryKey, getHealthCheckQueryKey, getListFaqsQueryKey, useGetBotStatus, useHealthCheck, useListFaqs } from '@workspace/api-client-react';
+import { ArrowUpRight, Check, CheckCheck, Clipboard, Cloud, Code2, ExternalLink, FileKey2, Flag, Globe2, Info, Link2, MessageCircle, RefreshCw, RotateCcw, Send, ShieldAlert, ShieldCheck, TestTube2, UserRoundCheck, Wifi } from 'lucide-react';
+import { useRef, useState, type ReactNode } from 'react';
+import { getGetBotStatusQueryKey, getHealthCheckQueryKey, getListBotConversationsQueryKey, getListFaqsQueryKey, useGetBotStatus, useHealthCheck, useListBotConversations, useListFaqs, useSimulateBot, useUpdateBotConversation } from '@workspace/api-client-react';
 import { AppShell } from '@/components/shell';
 import { Button, ErrorState, PageHeader, inputClass } from '@/components/common';
 import { useToast } from '@/hooks/use-toast';
 
 type Message = { from: 'bot' | 'client'; text: string };
-const initialMessages: Message[] = [{ from: 'bot', text: 'Hola, soy el asistente de estética. ¿En qué puedo ayudarte hoy?' }, { from: 'client', text: 'Hola, quisiera saber qué incluye una limpieza facial.' }, { from: 'bot', text: 'Con gusto. Puedo contarte sobre el tratamiento, su duración y ayudarte a encontrar un horario.' }];
+const initialMessages: Message[] = [{ from: 'bot', text: 'Escribe “hola” para iniciar una conversación nueva con el motor real del bot.' }];
 const webhookPath = '/api/webhooks/whatsapp';
+
+function maskedPhone(phone: string) {
+  if (phone.startsWith('simulator:')) return 'Simulador del panel';
+  return phone.length > 4 ? `•••• ${phone.slice(-4)}` : phone;
+}
 
 function StepCard({ number, icon, title, description, done, children }: { number: string; icon: ReactNode; title: string; description: string; done: boolean; children: ReactNode }) {
   return <article className={`rounded-[22px] border p-5 transition-colors duration-200 ${done ? 'border-primary/25 bg-primary/[0.035]' : 'border-border bg-card'}`}>
@@ -41,10 +46,15 @@ export default function Bot() {
   const status = useGetBotStatus({ query: { queryKey: getGetBotStatusQueryKey() } });
   const health = useHealthCheck({ query: { queryKey: getHealthCheckQueryKey() } });
   const faqs = useListFaqs(undefined, { query: { queryKey: getListFaqsQueryKey(undefined) } });
+  const handoffParams = { status: 'human' as const };
+  const handoffs = useListBotConversations(handoffParams, { query: { queryKey: getListBotConversationsQueryKey(handoffParams), refetchInterval: 15000 } });
+  const simulate = useSimulateBot();
+  const updateConversation = useUpdateBotConversation();
   const [messages, setMessages] = useState<Message[]>(initialMessages);
   const [draft, setDraft] = useState('');
   const [manualSteps, setManualSteps] = useState({ meta: false, deploy: false, secrets: false, webhook: false, subscription: false });
   const [finalTested, setFinalTested] = useState(false);
+  const sessionId = useRef(crypto.randomUUID());
   const { toast } = useToast();
 
   const bot = status.data;
@@ -78,11 +88,28 @@ export default function Bot() {
     await Promise.all([status.refetch(), health.refetch(), faqs.refetch()]);
     toast({ title: 'Estado actualizado', description: 'Comprobamos de nuevo la conexión y la configuración.' });
   };
-  const send = () => {
+  const send = async () => {
     const value = draft.trim();
-    if (!value) return;
-    setMessages((current) => [...current, { from: 'client', text: value }, { from: 'bot', text: 'Gracias por escribirnos. Esta es una simulación para revisar el tono de tus respuestas.' }]);
+    if (!value || simulate.isPending) return;
+    setMessages((current) => [...current, { from: 'client', text: value }]);
     setDraft('');
+    try {
+      const response = await simulate.mutateAsync({ data: { message: value, sessionId: sessionId.current } });
+      setMessages((current) => [...current, { from: 'bot', text: response.reply }]);
+      if (response.handoff) void handoffs.refetch();
+    } catch {
+      setMessages((current) => [...current, { from: 'bot', text: 'No pude procesar la prueba. Revisa que la API y la base de datos estén disponibles.' }]);
+    }
+  };
+  const resetSimulator = async () => {
+    if (simulate.isPending) return;
+    const response = await simulate.mutateAsync({ data: { message: 'hola', sessionId: sessionId.current, reset: true } });
+    setMessages([{ from: 'bot', text: response.reply }]);
+  };
+  const closeHandoff = async (id: number) => {
+    await updateConversation.mutateAsync({ id, data: { status: 'closed' } });
+    await handoffs.refetch();
+    toast({ title: 'Conversación cerrada', description: 'La derivación salió de la bandeja pendiente.' });
   };
   const runFinalTest = () => {
     setFinalTested(true);
@@ -132,7 +159,7 @@ export default function Bot() {
           <StepCard number="3" icon={<FileKey2 size={18} />} title={steps[2].title} description={steps[2].description} done={steps[2].done}>
             <div className="rounded-xl border border-accent/45 bg-accent/10 p-3.5">
               <div className="flex items-start gap-2.5"><ShieldAlert size={16} className="mt-0.5 shrink-0 text-[hsl(32_44%_30%)]" /><p className="text-xs leading-relaxed text-[hsl(32_44%_30%)]"><strong>Importante:</strong> nunca pegues valores de tokens, claves o secretos en este chat ni en el código. Guárdalos únicamente en <strong>Replit → Secrets</strong>.</p></div>
-              <div className="mt-3 flex flex-wrap gap-2">{['WHATSAPP_ACCESS_TOKEN', 'WHATSAPP_VERIFY_TOKEN', 'WHATSAPP_PHONE_NUMBER_ID'].map((name) => <code key={name} className="rounded-md bg-background/70 px-2 py-1 text-[10px] text-muted-foreground">{name}</code>)}</div>
+              <div className="mt-3 flex flex-wrap gap-2">{['WHATSAPP_ACCESS_TOKEN', 'WHATSAPP_VERIFY_TOKEN', 'WHATSAPP_PHONE_NUMBER_ID', 'WHATSAPP_BUSINESS_ACCOUNT_ID', 'META_APP_SECRET'].map((name) => <code key={name} className="rounded-md bg-background/70 px-2 py-1 text-[10px] text-muted-foreground">{name}</code>)}</div>
             </div>
             <Button variant="ghost" className="mt-3 h-9 px-3 text-xs" onClick={() => toggleStep('secrets')} data-testid="button-toggle-secrets">{manualSteps.secrets ? 'Marcar como pendiente' : 'Ya guardé los secretos en Replit'}</Button>
           </StepCard>
@@ -189,9 +216,9 @@ export default function Bot() {
 
     <section id="simulador-whatsapp" className="mt-6 grid gap-6 xl:grid-cols-[minmax(0,1.15fr)_minmax(300px,.85fr)]">
       <section className="surface rounded-[22px] p-5 sm:p-6">
-        <div className="mb-5 flex items-start justify-between gap-4"><div><p className="text-[10px] font-bold uppercase tracking-[.16em] text-primary">Antes de activar</p><h2 className="mt-1 text-[17px] font-semibold">Simulador de conversación</h2><p className="mt-1 text-xs text-muted-foreground">Prueba cómo responde el bot con tus preguntas frecuentes. Esta vista no contacta a clientes.</p></div><span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary"><MessageCircle size={18} /></span></div>
+        <div className="mb-5 flex items-start justify-between gap-4"><div><p className="text-[10px] font-bold uppercase tracking-[.16em] text-primary">Motor real</p><h2 className="mt-1 text-[17px] font-semibold">Simulador de conversación</h2><p className="mt-1 text-xs text-muted-foreground">Usa el mismo motor que WhatsApp para probar FAQs, tratamientos, citas y derivaciones sin contactar clientes.</p></div><div className="flex items-center gap-2"><Button variant="ghost" className="h-9 px-2.5 text-xs" onClick={() => void resetSimulator()} disabled={simulate.isPending}><RotateCcw size={14} />Reiniciar</Button><span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary"><MessageCircle size={18} /></span></div></div>
         <div className="min-h-[330px] space-y-3 rounded-2xl bg-[hsl(36_33%_94%)] p-4 dark:bg-muted/40">{messages.map((message, index) => <div key={`${message.from}-${index}`} className={`flex ${message.from === 'client' ? 'justify-end' : 'justify-start'}`} data-testid={`message-simulator-${index}`}><div className={`max-w-[82%] rounded-2xl px-3.5 py-2.5 text-sm leading-relaxed ${message.from === 'client' ? 'rounded-br-md bg-primary text-primary-foreground' : 'rounded-bl-md bg-card text-foreground shadow-sm'}`}>{message.text}<div className={`mt-1 flex items-center justify-end gap-1 text-[10px] ${message.from === 'client' ? 'text-primary-foreground/65' : 'text-muted-foreground'}`}><span>10:24</span>{message.from === 'client' && <CheckCheck size={12} />}</div></div></div>)}</div>
-        <div className="mt-3 flex gap-2"><input value={draft} onChange={(event) => setDraft(event.target.value)} onKeyDown={(event) => { if (event.key === 'Enter') send(); }} className={`${inputClass} flex-1`} placeholder="Escribe una pregunta para probar..." aria-label="Mensaje de simulación" data-testid="input-simulator-message" /><Button onClick={send} className="h-10 w-10 px-0" aria-label="Enviar mensaje" data-testid="button-send-simulator"><Send size={15} /></Button></div>
+        <div className="mt-3 flex gap-2"><input value={draft} onChange={(event) => setDraft(event.target.value)} onKeyDown={(event) => { if (event.key === 'Enter') void send(); }} className={`${inputClass} flex-1`} placeholder="Escribe hola, tratamientos, cita..." aria-label="Mensaje de simulación" data-testid="input-simulator-message" disabled={simulate.isPending} /><Button onClick={() => void send()} disabled={simulate.isPending} className="h-10 w-10 px-0" aria-label="Enviar mensaje" data-testid="button-send-simulator">{simulate.isPending ? <RefreshCw size={15} className="animate-spin" /> : <Send size={15} />}</Button></div>
       </section>
 
       <section className="surface rounded-[22px] p-5 sm:p-6">
@@ -201,6 +228,16 @@ export default function Bot() {
         </div>
         <div className="mt-4 flex items-start gap-2 rounded-xl border border-primary/15 bg-primary/5 p-3 text-[11px] leading-relaxed text-muted-foreground"><Info size={14} className="mt-0.5 shrink-0 text-primary" />Cuando Meta confirme la verificación, vuelve aquí y registra la prueba final.</div>
       </section>
+    </section>
+
+    <section className="mt-6 surface rounded-[22px] p-5 sm:p-6">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+        <div className="flex items-start gap-3"><span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-accent/35 text-[hsl(32_44%_30%)]"><UserRoundCheck size={18} /></span><div><p className="text-[10px] font-bold uppercase tracking-[.16em] text-primary">Atención humana</p><h2 className="mt-1 text-[17px] font-semibold">Conversaciones derivadas a recepción</h2><p className="mt-1 text-xs text-muted-foreground">Dudas médicas, complicaciones y solicitudes de una persona aparecen aquí automáticamente.</p></div></div>
+        <Button variant="secondary" className="h-9 px-3 text-xs" onClick={() => void handoffs.refetch()} disabled={handoffs.isFetching}><RefreshCw size={14} className={handoffs.isFetching ? 'animate-spin' : ''} />Actualizar</Button>
+      </div>
+      <div className="mt-5">
+        {handoffs.isLoading ? <div className="grid gap-3 md:grid-cols-2">{[0, 1].map((item) => <div key={item} className="h-24 animate-pulse rounded-2xl bg-muted" />)}</div> : handoffs.isError ? <ErrorState onRetry={() => void handoffs.refetch()} message="No pudimos cargar las conversaciones derivadas." /> : (handoffs.data?.length ?? 0) === 0 ? <div className="rounded-2xl border border-dashed border-border bg-muted/30 px-5 py-8 text-center"><p className="text-sm font-semibold">No hay derivaciones pendientes</p><p className="mt-1 text-xs text-muted-foreground">Cuando el bot escale una conversación, aparecerá en esta lista.</p></div> : <div className="grid gap-3 md:grid-cols-2">{handoffs.data?.map((conversation) => <article key={conversation.id} className="rounded-2xl border border-border bg-card p-4"><div className="flex items-start justify-between gap-3"><div><p className="text-sm font-semibold">{conversation.clientName || maskedPhone(conversation.phone)}</p><p className="mt-1 text-[11px] text-muted-foreground">{maskedPhone(conversation.phone)} · {conversation.messageCount} mensajes</p></div><span className="rounded-full bg-accent/30 px-2.5 py-1 text-[10px] font-bold uppercase tracking-[.08em] text-[hsl(32_44%_30%)]">Recepción</span></div><p className="mt-3 line-clamp-2 text-xs leading-relaxed text-muted-foreground">{conversation.lastMessage || 'Sin vista previa'}</p><div className="mt-4 flex items-center justify-between gap-3"><time className="text-[10px] text-muted-foreground">{new Date(conversation.lastMessageAt).toLocaleString('es-MX', { dateStyle: 'short', timeStyle: 'short' })}</time><Button variant="ghost" className="h-8 px-2.5 text-xs" onClick={() => void closeHandoff(conversation.id)} disabled={updateConversation.isPending}>Marcar atendida</Button></div></article>)}</div>}
+      </div>
     </section>
   </AppShell>;
 }
