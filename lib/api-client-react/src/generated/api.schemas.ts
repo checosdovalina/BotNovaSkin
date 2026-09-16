@@ -156,6 +156,56 @@ export interface BotStatus {
   webhookReady: boolean;
 }
 
+export type ConversationStatus = typeof ConversationStatus[keyof typeof ConversationStatus];
+
+
+export const ConversationStatus = {
+  bot: 'bot',
+  human: 'human',
+  closed: 'closed',
+} as const;
+
+export interface BotSimulationInput {
+  /**
+     * @minLength 1
+     * @maxLength 2000
+     */
+  message: string;
+  /**
+     * @minLength 1
+     * @maxLength 100
+     */
+  sessionId: string;
+  reset?: boolean;
+}
+
+export interface BotSimulationResponse {
+  reply: string;
+  handoff: boolean;
+  state: string;
+  conversationId: number;
+}
+
+export interface BotConversation {
+  id: number;
+  phone: string;
+  clientName: string | null;
+  status: ConversationStatus;
+  state: string;
+  lastMessage: string;
+  lastMessageAt: string;
+  messageCount: number;
+}
+
+export interface BotConversationUpdate {
+  status: ConversationStatus;
+}
+
+export interface BotConversationUpdateResponse {
+  id: number;
+  status: ConversationStatus;
+}
+
 /**
  * Solicitud inválida
  */
@@ -179,5 +229,9 @@ status?: AppointmentStatus;
 export type GetAvailabilityParams = {
 date: string;
 serviceId: number;
+};
+
+export type ListBotConversationsParams = {
+status?: ConversationStatus;
 };
 
