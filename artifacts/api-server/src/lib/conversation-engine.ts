@@ -1025,7 +1025,9 @@ export async function processConversationMessage(input: {
       normalized.includes("cuanto cuesta") ||
       normalized.includes("servicio")
       ) {
-        const selected = await selectService(input.message);
+        const selected = catalogIntent
+          ? undefined
+          : await selectService(input.message);
         result = await transition(
           conversation,
           "idle",
