@@ -7,6 +7,8 @@ Las preguntas frecuentes genéricas, como “¿cuándo veo resultados?” o “�
 
 Las acciones explícitas del usuario —agendar, cancelar o reprogramar— tienen prioridad sobre cualquier coincidencia de FAQ, incluso cuando existe un tratamiento guardado en el contexto.
 
+Cuando existe un tratamiento en contexto, las FAQs de seguimiento deben limitarse estrictamente a ese tratamiento. Las palabras de tema como “sesiones” y “unidades” no son intercambiables aunque la estructura de las preguntas sea similar.
+
 **Why:** El catálogo repite preguntas casi idénticas para varios tratamientos. Una coincidencia basada solo en la pregunta puede devolver, por ejemplo, los tiempos de toxina ante una consulta sobre NCTF.
 
-**How to apply:** Al ampliar el catálogo o el buscador, probar frases que combinen una redacción común con una marca o tratamiento, conversaciones de varios turnos con seguimientos breves y el cambio de una consulta informativa a una acción. Conservar embarazo, medicamentos, síntomas, reacciones, complicaciones y urgencias como derivación humana prioritaria.
+**How to apply:** Al ampliar el catálogo o el buscador, probar frases que combinen una redacción común con una marca o tratamiento, conversaciones de varios turnos con seguimientos breves, temas cercanos que no deben cruzarse y el cambio de una consulta informativa a una acción. Conservar embarazo, medicamentos, síntomas, reacciones, complicaciones y urgencias como derivación humana prioritaria.

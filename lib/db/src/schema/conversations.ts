@@ -28,6 +28,7 @@ export const conversationStateValues = [
 export type ConversationContext = {
   serviceId?: number;
   serviceName?: string;
+  appointmentPurpose?: "treatment" | "valuation";
   scheduledDate?: string;
   scheduledTime?: string;
   clientName?: string;

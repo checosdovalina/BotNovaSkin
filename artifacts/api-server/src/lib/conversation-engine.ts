@@ -265,6 +265,7 @@ async function selectService(message: string) {
 async function findFaq(
   message: string,
   serviceHint?: string,
+  serviceId?: number,
 ): Promise<
   | {
       answer: string;
@@ -277,6 +278,9 @@ async function findFaq(
   const normalizedMessage = normalize(searchableMessage);
   const definitionIntent = /^que (es|son)\b/.test(normalizedMessage);
   const messageTokens = new Set(tokens(searchableMessage));
+  const requiredSubject = ["sesione", "unidade"].find((subject) =>
+    messageTokens.has(subject),
+  );
   if (messageTokens.size === 0) return undefined;
   const rows = await db
     .select({
@@ -288,7 +292,11 @@ async function findFaq(
     })
     .from(faqsTable)
     .leftJoin(servicesTable, eq(faqsTable.serviceId, servicesTable.id))
-    .where(eq(faqsTable.active, true))
+    .where(
+      serviceId
+        ? and(eq(faqsTable.active, true), eq(faqsTable.serviceId, serviceId))
+        : eq(faqsTable.active, true),
+    )
     .orderBy(desc(faqsTable.priority));
 
   let best:
@@ -306,6 +314,9 @@ async function findFaq(
     const questionTokens = tokens(
       `${row.question} ${row.serviceName ?? ""}`,
     );
+    if (requiredSubject && !questionTokens.includes(requiredSubject)) {
+      continue;
+    }
     const answerTokens = tokens(row.answer);
     const questionMatches = new Set(
       questionTokens.filter((token) => messageTokens.has(token)),
@@ -436,12 +447,32 @@ function appointmentsList(
 
 async function startAppointment(
   conversation: Conversation,
+  purpose: "treatment" | "valuation" = "treatment",
 ): Promise<BotReply> {
+  if (
+    purpose === "valuation" &&
+    conversation.context?.serviceId &&
+    conversation.context.serviceName
+  ) {
+    return transition(
+      conversation,
+      "await_date",
+      {
+        serviceId: conversation.context.serviceId,
+        serviceName: conversation.context.serviceName,
+        appointmentPurpose: "valuation",
+      },
+      `Claro. Agendaremos una valoración para *${conversation.context.serviceName}*.\n\n¿Qué fecha prefieres? Escribe, por ejemplo, *mañana* o *20/09/2026*. Atendemos de lunes a sábado.`,
+      "bot",
+    );
+  }
   return transition(
     conversation,
     "await_service",
-    {},
-    `${await serviceList()}\n\n¿Cuál tratamiento deseas agendar?`,
+    { appointmentPurpose: purpose },
+    purpose === "valuation"
+      ? `${await serviceList()}\n\n¿Para qué tratamiento deseas agendar la valoración?`
+      : `${await serviceList()}\n\n¿Cuál tratamiento deseas agendar?`,
     "bot",
   );
 }
@@ -506,8 +537,12 @@ async function processState(
     return transition(
       conversation,
       "await_date",
-      { serviceId: service.id, serviceName: service.name },
-      `Perfecto, seleccionaste *${service.name}*.\n\n¿Qué fecha prefieres? Escribe, por ejemplo, *mañana* o *20/09/2026*. Atendemos de lunes a sábado.`,
+      { ...context, serviceId: service.id, serviceName: service.name },
+      `Perfecto, seleccionaste *${service.name}*${
+        context.appointmentPurpose === "valuation"
+          ? " para la valoración"
+          : ""
+      }.\n\n¿Qué fecha prefieres? Escribe, por ejemplo, *mañana* o *20/09/2026*. Atendemos de lunes a sábado.`,
     );
   }
 
@@ -560,7 +595,9 @@ async function processState(
       conversation,
       "await_name",
       { ...context, scheduledTime: time },
-      "¿A nombre de quién registro la cita?",
+      context.appointmentPurpose === "valuation"
+        ? "¿A nombre de quién registro la valoración?"
+        : "¿A nombre de quién registro la cita?",
     );
   }
 
@@ -582,6 +619,11 @@ async function processState(
       [
         "Confirma los datos de tu cita:",
         "",
+        `Tipo: *${
+          nextContext.appointmentPurpose === "valuation"
+            ? "Valoración"
+            : "Tratamiento"
+        }*`,
         `Tratamiento: *${nextContext.serviceName}*`,
         `Fecha: *${nextContext.scheduledDate}*`,
         `Hora: *${nextContext.scheduledTime}*`,
@@ -637,7 +679,11 @@ async function processState(
       return transition(
         conversation,
         "await_date",
-        { serviceId: context.serviceId, serviceName: context.serviceName },
+        {
+          serviceId: context.serviceId,
+          serviceName: context.serviceName,
+          appointmentPurpose: context.appointmentPurpose,
+        },
         "Ese horario acaba de ocuparse. Por favor elige otra fecha.",
       );
     }
@@ -649,13 +695,18 @@ async function processState(
       scheduledDate: context.scheduledDate,
       scheduledTime: context.scheduledTime,
       status: "confirmed",
-      notes: "Cita creada automáticamente por el bot de WhatsApp.",
+      notes:
+        context.appointmentPurpose === "valuation"
+          ? "Valoración creada automáticamente por el bot de WhatsApp."
+          : "Cita de tratamiento creada automáticamente por el bot de WhatsApp.",
     });
     return transition(
       conversation,
       "idle",
       {},
-      `Tu cita quedó confirmada para *${context.scheduledDate} a las ${context.scheduledTime}*.\n\nSi necesitas cambiarla, escribe *reprogramar*.`,
+      `Tu ${
+        context.appointmentPurpose === "valuation" ? "valoración" : "cita"
+      } quedó confirmada para *${context.scheduledDate} a las ${context.scheduledTime}*.\n\nSi necesitas cambiarla, escribe *reprogramar*.`,
     );
   }
 
@@ -901,10 +952,19 @@ export async function processConversationMessage(input: {
         normalized.includes("cancelar mi cita") ||
         normalized.includes("reprogram") ||
         normalized.includes("cambiar cita");
+      const sessionIntent = tokens(input.message).includes("sesione");
       const faq = actionIntent
         ? undefined
-        : await findFaq(input.message, conversation.context?.serviceName);
-      const ai = actionIntent
+        : await findFaq(
+            input.message,
+            conversation.context?.serviceName,
+            conversation.context?.serviceId,
+          );
+      const unsupportedSessionIntent =
+        sessionIntent &&
+        Boolean(conversation.context?.serviceName) &&
+        !faq;
+      const ai = actionIntent || unsupportedSessionIntent
         ? { kind: "unavailable" as const }
         : await answerWithApprovedKnowledge({
             conversationId: conversation.id,
@@ -952,6 +1012,13 @@ export async function processConversationMessage(input: {
           "El costo de la valoración debe confirmarlo recepción, ya que puede depender del tratamiento o especialista. Ya derivé tu conversación para que te compartan el precio vigente.",
           "human",
         );
+      } else if (unsupportedSessionIntent) {
+        result = await transition(
+          conversation,
+          "idle",
+          conversation.context,
+          `No tengo un número de sesiones aprobado para *${conversation.context.serviceName}*. Ese dato debe definirse durante la valoración. Si deseas, puedo ayudarte a *agendar una valoración*.`,
+        );
       } else if (
       catalogIntent ||
       normalized.includes("precio") ||
@@ -980,7 +1047,10 @@ export async function processConversationMessage(input: {
         normalized === "cita" ||
         normalized.includes("hacer una cita")
       ) {
-        result = await startAppointment(conversation);
+        result = await startAppointment(
+          conversation,
+          normalized.includes("valoracion") ? "valuation" : "treatment",
+        );
       } else if (
         normalized === "3" ||
         normalized.includes("cancelar cita") ||
