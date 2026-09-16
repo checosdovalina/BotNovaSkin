@@ -117,6 +117,9 @@ function tokens(value: string): string[] {
     costos: "precio",
     cuesta: "precio",
     cuestan: "precio",
+    dolorosa: "duele",
+    doloroso: "duele",
+    doler: "duele",
     ven: "notar",
     veo: "notar",
     ver: "notar",
@@ -255,16 +258,28 @@ async function selectService(message: string) {
   );
 }
 
-async function findFaq(message: string): Promise<string | undefined> {
-  const normalizedMessage = normalize(message);
+async function findFaq(
+  message: string,
+  serviceHint?: string,
+): Promise<
+  | {
+      answer: string;
+      serviceId?: number;
+      serviceName?: string;
+    }
+  | undefined
+> {
+  const searchableMessage = serviceHint ? `${message} ${serviceHint}` : message;
+  const normalizedMessage = normalize(searchableMessage);
   const definitionIntent = /^que (es|son)\b/.test(normalizedMessage);
-  const messageTokens = new Set(tokens(message));
+  const messageTokens = new Set(tokens(searchableMessage));
   if (messageTokens.size === 0) return undefined;
   const rows = await db
     .select({
       answer: faqsTable.answer,
       question: faqsTable.question,
       priority: faqsTable.priority,
+      serviceId: faqsTable.serviceId,
       serviceName: servicesTable.name,
     })
     .from(faqsTable)
@@ -272,7 +287,14 @@ async function findFaq(message: string): Promise<string | undefined> {
     .where(eq(faqsTable.active, true))
     .orderBy(desc(faqsTable.priority));
 
-  let best: { answer: string; score: number } | undefined;
+  let best:
+    | {
+        answer: string;
+        score: number;
+        serviceId?: number;
+        serviceName?: string;
+      }
+    | undefined;
   for (const row of rows) {
     const definitionQuestion = /^que (es|son)\b/.test(
       normalize(row.question),
@@ -301,10 +323,15 @@ async function findFaq(message: string): Promise<string | undefined> {
         (definitionIntent && definitionQuestion && totalMatches >= 1)) &&
       (!best || score > best.score)
     ) {
-      best = { answer: row.answer, score };
+      best = {
+        answer: row.answer,
+        score,
+        serviceId: row.serviceId ?? undefined,
+        serviceName: row.serviceName ?? undefined,
+      };
     }
   }
-  return best?.answer;
+  return best;
 }
 
 async function availableTimes(date: string): Promise<string[]> {
@@ -842,13 +869,21 @@ export async function processConversationMessage(input: {
     if (stateResult) {
       result = stateResult;
     } else {
-      const faq = await findFaq(input.message);
+      const faq = await findFaq(
+        input.message,
+        conversation.context?.serviceName,
+      );
       if (faq) {
         result = await transition(
           conversation,
           "idle",
-          {},
-          `${faq}\n\nEsta información es general y no sustituye una valoración profesional.`,
+          faq.serviceId
+            ? {
+                serviceId: faq.serviceId,
+                serviceName: faq.serviceName,
+              }
+            : conversation.context ?? {},
+          `${faq.answer}\n\nEsta información es general y no sustituye una valoración profesional.`,
         );
       } else if (
       normalized === "1" ||
@@ -861,7 +896,9 @@ export async function processConversationMessage(input: {
         result = await transition(
           conversation,
           "idle",
-          {},
+          selected
+            ? { serviceId: selected.id, serviceName: selected.name }
+            : {},
           selected
             ? `*${selected.name}*\n${selected.description}\nDuración aproximada: ${selected.durationMinutes} minutos.\nPrecio: ${
                 selected.price > 0
@@ -896,7 +933,7 @@ export async function processConversationMessage(input: {
           result = await transition(
             conversation,
             "idle",
-            {},
+            { serviceId: selected.id, serviceName: selected.name },
             `*${selected.name}*\n${selected.description}\nDuración aproximada: ${selected.durationMinutes} minutos.\nPrecio: ${
               selected.price > 0
                 ? currency(selected.price)
