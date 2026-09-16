@@ -129,6 +129,20 @@ function isAppointmentBookingIntent(normalized: string): boolean {
   );
 }
 
+function isBusinessHoursIntent(normalized: string): boolean {
+  return (
+    normalized.includes("horario") ||
+    normalized.includes("hora abren") ||
+    normalized.includes("hora abre") ||
+    normalized.includes("hora cierran") ||
+    normalized.includes("hora cierra") ||
+    normalized.includes("cuando abren") ||
+    normalized.includes("cuando cierran") ||
+    normalized.includes("dias abren") ||
+    normalized.includes("dias atienden")
+  );
+}
+
 function tokens(value: string): string[] {
   const aliases: Record<string, string> = {
     costo: "precio",
@@ -952,9 +966,11 @@ export async function processConversationMessage(input: {
         normalized.includes("lista de tratamientos") ||
         normalized.includes("que servicios") ||
         normalized.includes("lista de servicios");
+      const businessHoursIntent = isBusinessHoursIntent(normalized);
       const actionIntent =
         valuationPriceIntent ||
         catalogIntent ||
+        businessHoursIntent ||
         normalized === "2" ||
         normalized === "3" ||
         normalized === "4" ||
@@ -1022,6 +1038,20 @@ export async function processConversationMessage(input: {
           conversation.context ?? {},
           "El costo de la valoración debe confirmarlo recepción, ya que puede depender del tratamiento o especialista. Ya derivé tu conversación para que te compartan el precio vigente.",
           "human",
+        );
+      } else if (businessHoursIntent) {
+        result = await transition(
+          conversation,
+          "idle",
+          conversation.context ?? {},
+          [
+            "*Horario de atención de NovaSkin:*",
+            "Lunes a viernes: 10:00 a. m. a 7:00 p. m.",
+            "Sábados: 10:00 a. m. a 4:00 p. m.",
+            "Domingos: cerrado.",
+            "",
+            "Si deseas reservar, escribe *cita*.",
+          ].join("\n"),
         );
       } else if (unsupportedSessionIntent) {
         result = await transition(
