@@ -115,6 +115,20 @@ function normalize(value: string): string {
     .trim();
 }
 
+function isAppointmentBookingIntent(normalized: string): boolean {
+  return (
+    normalized === "cita" ||
+    normalized.includes("agendar") ||
+    normalized.includes("agendo") ||
+    normalized.includes("agenda una cita") ||
+    normalized.includes("reservar") ||
+    normalized.includes("hacer una cita") ||
+    normalized.includes("hago una cita") ||
+    normalized.includes("sacar una cita") ||
+    normalized.includes("saco una cita")
+  );
+}
+
 function tokens(value: string): string[] {
   const aliases: Record<string, string> = {
     costo: "precio",
@@ -944,10 +958,7 @@ export async function processConversationMessage(input: {
         normalized === "2" ||
         normalized === "3" ||
         normalized === "4" ||
-        normalized === "cita" ||
-        normalized.includes("agendar") ||
-        normalized.includes("reservar") ||
-        normalized.includes("hacer una cita") ||
+        isAppointmentBookingIntent(normalized) ||
         normalized.includes("cancelar cita") ||
         normalized.includes("cancelar mi cita") ||
         normalized.includes("reprogram") ||
@@ -1044,10 +1055,7 @@ export async function processConversationMessage(input: {
         );
       } else if (
         normalized === "2" ||
-        normalized.includes("agendar") ||
-        normalized.includes("reservar") ||
-        normalized === "cita" ||
-        normalized.includes("hacer una cita")
+        isAppointmentBookingIntent(normalized)
       ) {
         result = await startAppointment(
           conversation,
