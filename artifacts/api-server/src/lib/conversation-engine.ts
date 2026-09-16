@@ -869,10 +869,21 @@ export async function processConversationMessage(input: {
     if (stateResult) {
       result = stateResult;
     } else {
-      const faq = await findFaq(
-        input.message,
-        conversation.context?.serviceName,
-      );
+      const actionIntent =
+        normalized === "2" ||
+        normalized === "3" ||
+        normalized === "4" ||
+        normalized === "cita" ||
+        normalized.includes("agendar") ||
+        normalized.includes("reservar") ||
+        normalized.includes("hacer una cita") ||
+        normalized.includes("cancelar cita") ||
+        normalized.includes("cancelar mi cita") ||
+        normalized.includes("reprogram") ||
+        normalized.includes("cambiar cita");
+      const faq = actionIntent
+        ? undefined
+        : await findFaq(input.message, conversation.context?.serviceName);
       if (faq) {
         result = await transition(
           conversation,
