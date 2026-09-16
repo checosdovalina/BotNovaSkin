@@ -1074,7 +1074,7 @@ export async function processConversationMessage(input: {
           conversation.context ?? {},
           [
             "*Ubicación de NovaSkin:*",
-            "Plaza Laguna Oriente, Av. Juárez, Local 43, Residencial Las Torres Sector II, 27085 Torreón, Coahuila.",
+            "Plaza Laguna Oriente, Av. Juarez Loc 43, Residencial las Torres Sector II, 27085 Torreón, Coah.",
             "",
             "Abrir ruta en Google Maps:",
             "https://www.google.com/maps/dir/?api=1&destination=Plaza+Laguna+Oriente%2C+Av.+Juarez+Loc+43%2C+Residencial+las+Torres+Sector+II%2C+27085+Torreon%2C+Coahuila",
