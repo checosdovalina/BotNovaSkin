@@ -143,6 +143,18 @@ function isBusinessHoursIntent(normalized: string): boolean {
   );
 }
 
+function isBusinessLocationIntent(normalized: string): boolean {
+  return (
+    normalized.includes("ubicacion") ||
+    normalized.includes("direccion") ||
+    normalized.includes("como llego") ||
+    normalized.includes("donde estan") ||
+    normalized.includes("donde se ubican") ||
+    normalized.includes("google maps") ||
+    normalized === "mapa"
+  );
+}
+
 function tokens(value: string): string[] {
   const aliases: Record<string, string> = {
     costo: "precio",
@@ -967,10 +979,12 @@ export async function processConversationMessage(input: {
         normalized.includes("que servicios") ||
         normalized.includes("lista de servicios");
       const businessHoursIntent = isBusinessHoursIntent(normalized);
+      const businessLocationIntent = isBusinessLocationIntent(normalized);
       const actionIntent =
         valuationPriceIntent ||
         catalogIntent ||
         businessHoursIntent ||
+        businessLocationIntent ||
         normalized === "2" ||
         normalized === "3" ||
         normalized === "4" ||
@@ -1051,6 +1065,19 @@ export async function processConversationMessage(input: {
             "Domingos: cerrado.",
             "",
             "Si deseas reservar, escribe *cita*.",
+          ].join("\n"),
+        );
+      } else if (businessLocationIntent) {
+        result = await transition(
+          conversation,
+          "idle",
+          conversation.context ?? {},
+          [
+            "*Ubicación de NovaSkin:*",
+            "Plaza Laguna Oriente, Av. Juárez, Local 43, Residencial Las Torres Sector II, 27085 Torreón, Coahuila.",
+            "",
+            "Abrir ruta en Google Maps:",
+            "https://www.google.com/maps/dir/?api=1&destination=Plaza+Laguna+Oriente%2C+Av.+Juarez+Loc+43%2C+Residencial+las+Torres+Sector+II%2C+27085+Torreon%2C+Coahuila",
           ].join("\n"),
         );
       } else if (unsupportedSessionIntent) {
