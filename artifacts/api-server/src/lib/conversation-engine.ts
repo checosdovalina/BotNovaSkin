@@ -294,7 +294,11 @@ async function selectService(message: string) {
   if (Number.isInteger(choice) && choice >= 1 && choice <= services.length) {
     return services[choice - 1];
   }
-  const value = normalize(message);
+  const serviceAliases: Record<string, string> = {
+    botox: "toxina botulinica",
+  };
+  const normalizedMessage = normalize(message);
+  const value = serviceAliases[normalizedMessage] ?? normalizedMessage;
   return services.find(
     (service) =>
       value.includes(normalize(service.name)) ||
