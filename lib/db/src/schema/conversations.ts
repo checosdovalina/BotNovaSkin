@@ -17,6 +17,7 @@ export const conversationStateValues = [
   "await_date",
   "await_time",
   "await_name",
+  "await_phone",
   "await_confirm",
   "await_cancel_selection",
   "await_cancel_confirm",
@@ -32,6 +33,7 @@ export type ConversationContext = {
   scheduledDate?: string;
   scheduledTime?: string;
   clientName?: string;
+  verifiedPhone?: string;
   appointmentId?: number;
 };
 
