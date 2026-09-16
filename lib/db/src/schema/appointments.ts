@@ -31,6 +31,9 @@ export const appointmentsTable = pgTable("beauty_appointments", {
     .notNull()
     .default("pending"),
   notes: text("notes").notNull().default(""),
+  phoneVerifiedAt: timestamp("phone_verified_at", { withTimezone: true }),
+  reminder24SentAt: timestamp("reminder_24_sent_at", { withTimezone: true }),
+  reminder2SentAt: timestamp("reminder_2_sent_at", { withTimezone: true }),
   createdAt: timestamp("created_at", { withTimezone: true })
     .notNull()
     .defaultNow(),

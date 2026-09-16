@@ -2,6 +2,7 @@ import app from "./app";
 import { logger } from "./lib/logger";
 import { seedDatabase } from "./lib/seed";
 import { aiConfigured } from "./lib/ai-assistant";
+import { startAppointmentReminderWorker } from "./lib/appointment-reminders";
 
 const rawPort = process.env["PORT"];
 
@@ -18,6 +19,7 @@ if (Number.isNaN(port) || port <= 0) {
 }
 
 await seedDatabase();
+startAppointmentReminderWorker();
 logger.info(
   { aiConfigured: aiConfigured() },
   "AI assistant configuration loaded",

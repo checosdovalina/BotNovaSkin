@@ -261,6 +261,16 @@ function isNo(message: string): boolean {
   return /^(no|cancelar|atras|atrás)$/.test(message.trim().toLowerCase());
 }
 
+function normalizeMexicanPhone(message: string): string | undefined {
+  const digits = message.replace(/\D/g, "");
+  if (digits.length === 10) return `52${digits}`;
+  if (digits.length === 12 && digits.startsWith("52")) return digits;
+  if (digits.length === 13 && digits.startsWith("521")) {
+    return `52${digits.slice(3)}`;
+  }
+  return undefined;
+}
+
 async function activeServices() {
   return db
     .select()
@@ -658,6 +668,33 @@ async function processState(
     const nextContext = { ...context, clientName: name };
     return transition(
       conversation,
+      "await_phone",
+      nextContext,
+      "Escribe el número de WhatsApp donde deseas recibir la confirmación y los recordatorios. Incluye los 10 dígitos, por ejemplo: *8711234567*.",
+    );
+  }
+
+  if (conversation.state === "await_phone") {
+    const verifiedPhone = normalizeMexicanPhone(message);
+    if (!verifiedPhone) {
+      return transition(
+        conversation,
+        "await_phone",
+        context,
+        "No pude validar el número. Escribe los 10 dígitos de tu WhatsApp, por ejemplo: *8711234567*.",
+      );
+    }
+    if (verifiedPhone !== normalizeMexicanPhone(conversation.phone)) {
+      return transition(
+        conversation,
+        "await_phone",
+        context,
+        "El número escrito no coincide con el WhatsApp desde el que estás conversando. Para confirmar que te pertenece, escribe nuevamente este mismo número de WhatsApp con 10 dígitos.",
+      );
+    }
+    const nextContext = { ...context, verifiedPhone };
+    return transition(
+      conversation,
       "await_confirm",
       nextContext,
       [
@@ -671,7 +708,9 @@ async function processState(
         `Tratamiento: *${nextContext.serviceName}*`,
         `Fecha: *${nextContext.scheduledDate}*`,
         `Hora: *${nextContext.scheduledTime}*`,
-        `Nombre: *${name}*`,
+        `Nombre: *${nextContext.clientName}*`,
+        `WhatsApp: *+${verifiedPhone}*`,
+        "Recordatorios: *un día antes y dos horas antes*",
         "",
         "Responde *sí* para confirmar o *no* para cancelar.",
       ].join("\n"),
@@ -699,7 +738,8 @@ async function processState(
       !context.serviceId ||
       !context.scheduledDate ||
       !context.scheduledTime ||
-      !context.clientName
+      !context.clientName ||
+      !context.verifiedPhone
     ) {
       return transition(
         conversation,
@@ -733,12 +773,13 @@ async function processState(
     }
     await db.insert(appointmentsTable).values({
       clientName: context.clientName,
-      phone: conversation.phone,
+      phone: context.verifiedPhone,
       serviceId: context.serviceId,
       area: "WhatsApp",
       scheduledDate: context.scheduledDate,
       scheduledTime: context.scheduledTime,
       status: "confirmed",
+      phoneVerifiedAt: new Date(),
       notes:
         context.appointmentPurpose === "valuation"
           ? "Valoración creada automáticamente por el bot de WhatsApp."
@@ -869,7 +910,13 @@ async function processState(
     }
     await db
       .update(appointmentsTable)
-      .set({ scheduledDate: date, scheduledTime: time, status: "confirmed" })
+      .set({
+        scheduledDate: date,
+        scheduledTime: time,
+        status: "confirmed",
+        reminder24SentAt: null,
+        reminder2SentAt: null,
+      })
       .where(
         and(
           eq(appointmentsTable.id, context.appointmentId),
