@@ -94,6 +94,17 @@ async function processDueReminders(): Promise<void> {
   }
 }
 
+async function runReminderCycle(): Promise<void> {
+  try {
+    await processDueReminders();
+  } catch (err) {
+    logger.error(
+      { err },
+      "Appointment reminder cycle failed; API will remain available",
+    );
+  }
+}
+
 export function startAppointmentReminderWorker(): void {
   if (!whatsappConfigured() || !whatsappReminderTemplatesConfigured()) {
     logger.warn(
@@ -101,8 +112,8 @@ export function startAppointmentReminderWorker(): void {
     );
     return;
   }
-  void processDueReminders();
-  const timer = setInterval(() => void processDueReminders(), pollIntervalMs);
+  void runReminderCycle();
+  const timer = setInterval(() => void runReminderCycle(), pollIntervalMs);
   timer.unref();
   logger.info({ clinicTimeZone }, "Appointment reminder worker started");
 }
