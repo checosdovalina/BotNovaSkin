@@ -1,0 +1,64 @@
+[root@localhost botnovaskin]# sudo nano /etc/botnovaskin.env
+[root@localhost botnovaskin]# sudo nano /etc/botnovaskin.env
+[root@localhost botnovaskin]# sudo systemctl restart botnovaskin-api.service
+sleep 5
+
+sudo systemctl status botnovaskin-api.service --no-pager -l
+sudo journalctl -u botnovaskin-api.service -n 50 --no-pager
+● botnovaskin-api.service - BotNovaSkin API
+     Loaded: loaded (/etc/systemd/system/botnovaskin-api.service; enabled; preset: disabled)
+     Active: activating (auto-restart) (Result: exit-code) since Thu 2026-09-17 04:28:44 UTC; 4s ago
+    Process: 2055741 ExecStart=/usr/bin/node --enable-source-maps /opt/botnovaskin/artifacts/api-server/dist/index.mjs (code=exited, status=1/FAILURE)
+   Main PID: 2055741 (code=exited, status=1/FAILURE)
+        CPU: 476ms
+Sep 17 04:28:44 localhost node[2055741]: {"level":30,"time":1789619324333,"pid":2055741,"hostname":"localhost","port":5100,"msg":"Server listening"}
+Sep 17 04:28:44 localhost node[2055741]: /opt/botnovaskin/node_modules/.pnpm/drizzle-orm@0.45.2_@types+pg@8.20.0_pg@8.22.0/node_modules/src/pg-core/session.ts:73
+Sep 17 04:28:44 localhost node[2055741]:                                 throw new DrizzleQueryError(queryString, params, e as Error);
+Sep 17 04:28:44 localhost node[2055741]:                                       ^
+Sep 17 04:28:44 localhost node[2055741]: _DrizzleQueryError: Failed query: select "beauty_appointments"."id", "beauty_appointments"."client_name", "beauty_appointments"."phone", "beauty_appointments"."scheduled_date", "beauty_appointments"."scheduled_time", "beauty_services"."name" from "beauty_appointments" inner join "beauty_services" on "beauty_appointments"."service_id" = "beauty_services"."id" where ("beauty_appointments"."status" = $1 and "beauty_appointments"."phone_verified_at" is not null and "beauty_appointments"."reminder_24_sent_at" is null and (("beauty_appointments"."scheduled_date"::date + "beauty_appointments"."scheduled_time"::time) AT TIME ZONE $2) > now() and (("beauty_appointments"."scheduled_date"::date + "beauty_appointments"."scheduled_time"::time) AT TIME ZONE $3) <= now() + $4::interval and (("beauty_appointments"."scheduled_date"::date + "beauty_appointments"."scheduled_time"::time) AT TIME ZONE $5) > now() + interval '2 hours') limit $6
+Sep 17 04:28:44 localhost node[2055741]: params: confirmed,America/Monterrey,America/Monterrey,24 hours,America/Monterrey,25
+Sep 17 04:28:44 localhost node[2055741]:     at NodePgPreparedQuery.queryWithCache (/opt/botnovaskin/node_modules/.pnpm/drizzle-orm@0.45.2_@types+pg@8.20.0_pg@8.22.0/node_modules/src/pg-core/session.ts:73:11)
+Sep 17 04:28:44 localhost node[2055741]:     at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+Sep 17 04:28:44 localhost node[2055741]:     at async <anonymous> (/opt/botnovaskin/node_modules/.pnpm/drizzle-orm@0.45.2_@types+pg@8.20.0_pg@8.22.0/node_modules/src/node-postgres/session.ts:154:19)
+Sep 17 04:28:44 localhost node[2055741]:     at async processReminder (/opt/botnovaskin/artifacts/api-server/src/lib/appointment-reminders.ts:32:16)
+Sep 17 04:28:44 localhost node[2055741]:     at async processDueReminders (/opt/botnovaskin/artifacts/api-server/src/lib/appointment-reminders.ts:87:5) {
+Sep 17 04:28:44 localhost node[2055741]:   query: `select "beauty_appointments"."id", "beauty_appointments"."client_name", "beauty_appointments"."phone", "beauty_appointments"."scheduled_date", "beauty_appointments"."scheduled_time", "beauty_services"."name" from "beauty_appointments" inner join "beauty_services" on "beauty_appointments"."service_id" = "beauty_services"."id" where ("beauty_appointments"."status" = $1 and "beauty_appointments"."phone_verified_at" is not null and "beauty_appointments"."reminder_24_sent_at" is null and (("beauty_appointments"."scheduled_date"::date + "beauty_appointments"."scheduled_time"::time) AT TIME ZONE $2) > now() and (("beauty_appointments"."scheduled_date"::date + "beauty_appointments"."scheduled_time"::time) AT TIME ZONE $3) <= now() + $4::interval and (("beauty_appointments"."scheduled_date"::date + "beauty_appointments"."scheduled_time"::time) AT TIME ZONE $5) > now() + interval '2 hours') limit $6`,
+Sep 17 04:28:44 localhost node[2055741]:   params: [
+Sep 17 04:28:44 localhost node[2055741]:     'confirmed',
+Sep 17 04:28:44 localhost node[2055741]:     'America/Monterrey',
+Sep 17 04:28:44 localhost node[2055741]:     'America/Monterrey',
+Sep 17 04:28:44 localhost node[2055741]:     '24 hours',
+Sep 17 04:28:44 localhost node[2055741]:     'America/Monterrey',
+Sep 17 04:28:44 localhost node[2055741]:     25
+Sep 17 04:28:44 localhost node[2055741]:   ],
+Sep 17 04:28:44 localhost node[2055741]:   cause: error: column beauty_appointments.phone_verified_at does not exist
+Sep 17 04:28:44 localhost node[2055741]:       at <anonymous> (/opt/botnovaskin/node_modules/.pnpm/pg-pool@3.14.0_pg@8.22.0/node_modules/pg-pool/index.js:45:11)
+Sep 17 04:28:44 localhost node[2055741]:       at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+Sep 17 04:28:44 localhost node[2055741]:       at async <anonymous> (/opt/botnovaskin/node_modules/.pnpm/drizzle-orm@0.45.2_@types+pg@8.20.0_pg@8.22.0/node_modules/src/node-postgres/session.ts:161:13)
+Sep 17 04:28:44 localhost node[2055741]:       at async NodePgPreparedQuery.queryWithCache (/opt/botnovaskin/node_modules/.pnpm/drizzle-orm@0.45.2_@types+pg@8.20.0_pg@8.22.0/node_modules/src/pg-core/session.ts:71:12)
+Sep 17 04:28:44 localhost node[2055741]:       at async <anonymous> (/opt/botnovaskin/node_modules/.pnpm/drizzle-orm@0.45.2_@types+pg@8.20.0_pg@8.22.0/node_modules/src/node-postgres/session.ts:154:19)
+Sep 17 04:28:44 localhost node[2055741]:       at async processReminder (/opt/botnovaskin/artifacts/api-server/src/lib/appointment-reminders.ts:32:16)
+Sep 17 04:28:44 localhost node[2055741]:       at async processDueReminders (/opt/botnovaskin/artifacts/api-server/src/lib/appointment-reminders.ts:87:5) {
+Sep 17 04:28:44 localhost node[2055741]:     length: 136,
+Sep 17 04:28:44 localhost node[2055741]:     severity: 'ERROR',
+Sep 17 04:28:44 localhost node[2055741]:     code: '42703',
+Sep 17 04:28:44 localhost node[2055741]:     detail: undefined,
+Sep 17 04:28:44 localhost node[2055741]:     hint: undefined,
+Sep 17 04:28:44 localhost node[2055741]:     position: '375',
+Sep 17 04:28:44 localhost node[2055741]:     internalPosition: undefined,
+Sep 17 04:28:44 localhost node[2055741]:     internalQuery: undefined,
+Sep 17 04:28:44 localhost node[2055741]:     where: undefined,
+Sep 17 04:28:44 localhost node[2055741]:     schema: undefined,
+Sep 17 04:28:44 localhost node[2055741]:     table: undefined,
+Sep 17 04:28:44 localhost node[2055741]:     column: undefined,
+Sep 17 04:28:44 localhost node[2055741]:     dataType: undefined,
+Sep 17 04:28:44 localhost node[2055741]:     constraint: undefined,
+Sep 17 04:28:44 localhost node[2055741]:     file: 'parse_relation.c',
+Sep 17 04:28:44 localhost node[2055741]:     line: '3665',
+Sep 17 04:28:44 localhost node[2055741]:     routine: 'errorMissingColumn'
+Sep 17 04:28:44 localhost node[2055741]:   }
+Sep 17 04:28:44 localhost node[2055741]: }
+Sep 17 04:28:44 localhost node[2055741]: Node.js v20.19.6
+Sep 17 04:28:44 localhost systemd[1]: botnovaskin-api.service: Main process exited, code=exited, status=1/FAILURE
+Sep 17 04:28:44 localhost systemd[1]: botnovaskin-api.service: Failed with result 'exit-code'.
+[root@localhost botnovaskin]# 

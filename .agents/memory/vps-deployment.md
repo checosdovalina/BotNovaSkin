@@ -9,4 +9,4 @@ Toda funcionalidad de producción, incluida una futura integración de IA, debe 
 
 **Why:** El despliegue comparte servidor con aplicaciones existentes; cambiar paquetes globales, puertos o bloques generales puede causar interrupciones.
 
-**How to apply:** Ejecutar la API con un servicio `systemd` propio en el puerto 5100, servir el panel mediante un bloque exacto para `apineoskin.nexxo.com.mx`, recargar Nginx en lugar de reiniciarlo y usar una base de datos/rol PostgreSQL dedicados. Para IA, elegir un proveedor accesible por API desde AlmaLinux y guardar sus credenciales únicamente en `/etc/botnovaskin.env`.
+**How to apply:** Ejecutar la API con un servicio `systemd` propio en el puerto 5100, servir el panel mediante un bloque exacto para `apineoskin.nexxo.com.mx`, recargar Nginx en lugar de reiniciarlo y usar una base de datos/rol PostgreSQL dedicados. Para IA, elegir un proveedor accesible por API desde AlmaLinux y guardar sus credenciales únicamente en `/etc/botnovaskin.env`. Los comandos manuales de esquema no heredan el `EnvironmentFile` de systemd: cargar `DATABASE_URL` desde ese archivo y preservarlo al ejecutar Drizzle como propietario del proyecto.
