@@ -1031,11 +1031,23 @@ export async function processConversationMessage(input: {
         normalized.includes("lista de servicios");
       const businessHoursIntent = isBusinessHoursIntent(normalized);
       const businessLocationIntent = isBusinessLocationIntent(normalized);
+      const skinboosterBotoxComparisonIntent =
+        Boolean(
+          conversation.context?.serviceName &&
+            normalize(conversation.context.serviceName).includes("skinbooster"),
+        ) &&
+        (normalized.includes("botox") ||
+          normalized.includes("toxina botulinica")) &&
+        (normalized.includes("parecido") ||
+          normalized.includes("similar") ||
+          normalized.includes("diferencia") ||
+          normalized.includes("igual"));
       const actionIntent =
         valuationPriceIntent ||
         catalogIntent ||
         businessHoursIntent ||
         businessLocationIntent ||
+        skinboosterBotoxComparisonIntent ||
         normalized === "2" ||
         normalized === "3" ||
         normalized === "4" ||
@@ -1129,6 +1141,21 @@ export async function processConversationMessage(input: {
             "",
             "Abrir ruta en Google Maps:",
             "https://www.google.com/maps/dir/?api=1&destination=Plaza+Laguna+Oriente%2C+Av.+Juarez+Loc+43%2C+Residencial+las+Torres+Sector+II%2C+27085+Torreon%2C+Coahuila",
+          ].join("\n"),
+        );
+      } else if (skinboosterBotoxComparisonIntent) {
+        result = await transition(
+          conversation,
+          "idle",
+          conversation.context ?? {},
+          [
+            "No son lo mismo, aunque ambos pueden aplicarse mediante inyecciones.",
+            "",
+            "El *Skinbooster* busca mejorar la hidratación y la calidad de la piel.",
+            "",
+            "La *toxina botulínica (bótox)* disminuye temporalmente la actividad de determinados músculos para suavizar líneas de expresión.",
+            "",
+            "La opción adecuada depende de tus objetivos y debe definirse durante una valoración profesional.",
           ].join("\n"),
         );
       } else if (unsupportedSessionIntent) {
