@@ -9,6 +9,7 @@ import Appointments from '@/pages/appointments';
 import Services from '@/pages/services';
 import Faqs from '@/pages/faqs';
 import Bot from '@/pages/bot';
+import Privacy from '@/pages/privacy';
 import {
   Route,
   Switch,
@@ -29,6 +30,7 @@ function Router() {
         <Route path="/services" component={Services} />
         <Route path="/faqs" component={Faqs} />
         <Route path="/bot" component={Bot} />
+        <Route path="/privacy" component={Privacy} />
         <Route component={NotFound} />
       </Switch>
     </RoutedErrorBoundary>
