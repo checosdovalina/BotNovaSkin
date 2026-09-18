@@ -28,3 +28,17 @@ mtime_ms = 1789755366498
 storage_uri = "gcs://replit-rams-assets-worf/rams/assets/repl:4b76fb10-c5d6-4a93-9606-4b4cf6395248/b3d69c34-b9d2-46f1-a1e2-fef7a5f01170/eda5193a-7bfd-4140-955e-d75cbf351c8a"
 storage_version_token = "1789755391493596"
 content_type = "image/png"
+
+[[outputs]]
+id = "oSjCPpLJ4abCpMoQAD4RR"
+uri = "file://exports/novaskin-app-icon-transparent-1024.png"
+type = "image"
+title = "Ícono NovaSkin transparente — 1024×1024"
+description = "PNG con canal alfa y fondo totalmente transparente, listo para subir como ícono de la app en Meta. Tamaño aproximado: 51 KB."
+logical_id = "87b1d513-0fed-4bf3-a82a-e118fb72eb88"
+content_hash = "sha256:b026faf9794a8bc2c8eccd71824bba3338e27cdcc9acb866f316b90e66fc1bcd"
+size = 51660
+mtime_ms = 1789755580230
+storage_uri = "gcs://replit-rams-assets-worf/rams/assets/repl:4b76fb10-c5d6-4a93-9606-4b4cf6395248/87b1d513-0fed-4bf3-a82a-e118fb72eb88/6e648140-98ff-4ad7-85ab-c7f8b8202427"
+storage_version_token = "1789755597624149"
+content_type = "image/png"
