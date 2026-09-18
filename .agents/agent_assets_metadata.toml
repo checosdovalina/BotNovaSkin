@@ -14,3 +14,17 @@ mtime_ms = 1789521953373
 storage_uri = "gcs://replit-rams-assets-worf/rams/assets/repl:4b76fb10-c5d6-4a93-9606-4b4cf6395248/dd3ad599-bc36-495c-81d4-beeefaf45750/8c903f0c-5689-40a5-a482-f9cf650da6d3"
 storage_version_token = "1789522101707245"
 content_type = "application/octet-stream"
+
+[[outputs]]
+id = "UKkyMl_1e6JCsSmLtk9-z"
+uri = "file://exports/novaskin-app-icon-1024.png"
+type = "image"
+title = "Ícono de app NovaSkin — 1024×1024"
+description = "PNG cuadrado optimizado para la revisión de Meta, con fondo blanco y monograma centrado. Tamaño aproximado: 71 KB."
+logical_id = "b3d69c34-b9d2-46f1-a1e2-fef7a5f01170"
+content_hash = "sha256:88e7782f49eff333aa1c7993c7da0b9fc8840b8acc9a43d12a6de6f8619d8cb0"
+size = 71919
+mtime_ms = 1789755366498
+storage_uri = "gcs://replit-rams-assets-worf/rams/assets/repl:4b76fb10-c5d6-4a93-9606-4b4cf6395248/b3d69c34-b9d2-46f1-a1e2-fef7a5f01170/eda5193a-7bfd-4140-955e-d75cbf351c8a"
+storage_version_token = "1789755391493596"
+content_type = "image/png"
