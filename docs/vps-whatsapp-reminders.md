@@ -30,7 +30,8 @@ Después de que Meta apruebe ambas plantillas, agregar en `/etc/botnovaskin.env`
 ```bash
 WHATSAPP_REMINDER_24H_TEMPLATE=recordatorio_cita_24h
 WHATSAPP_REMINDER_2H_TEMPLATE=recordatorio_cita_2h
-WHATSAPP_REMINDER_LANGUAGE=es_MX
+WHATSAPP_REMINDER_24H_LANGUAGE=es
+WHATSAPP_REMINDER_2H_LANGUAGE=es_MX
 ```
 
 No agregar tokens o secretos al repositorio.

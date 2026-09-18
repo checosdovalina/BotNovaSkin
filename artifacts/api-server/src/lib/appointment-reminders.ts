@@ -22,6 +22,7 @@ function appointmentInstant() {
 async function processReminder(
   kind: "24h" | "2h",
   templateName: string,
+  languageCode: string,
 ): Promise<void> {
   const instant = appointmentInstant();
   const sentColumn =
@@ -56,12 +57,17 @@ async function processReminder(
 
   for (const row of rows) {
     try {
-      await sendWhatsAppTemplate(row.phone, templateName, [
-        row.clientName,
-        row.serviceName,
-        row.scheduledDate,
-        row.scheduledTime,
-      ]);
+      await sendWhatsAppTemplate(
+        row.phone,
+        templateName,
+        languageCode,
+        [
+          row.clientName,
+          row.serviceName,
+          row.scheduledDate,
+          row.scheduledTime,
+        ],
+      );
       await db
         .update(appointmentsTable)
         .set(
@@ -87,8 +93,13 @@ async function processDueReminders(): Promise<void> {
     await processReminder(
       "24h",
       process.env.WHATSAPP_REMINDER_24H_TEMPLATE!,
+      process.env.WHATSAPP_REMINDER_24H_LANGUAGE ?? "es",
     );
-    await processReminder("2h", process.env.WHATSAPP_REMINDER_2H_TEMPLATE!);
+    await processReminder(
+      "2h",
+      process.env.WHATSAPP_REMINDER_2H_TEMPLATE!,
+      process.env.WHATSAPP_REMINDER_2H_LANGUAGE ?? "es_MX",
+    );
   } finally {
     processing = false;
   }
