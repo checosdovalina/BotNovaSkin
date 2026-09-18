@@ -579,6 +579,14 @@ async function processState(
 ): Promise<BotReply | undefined> {
   const context = conversation.context ?? {};
   if (conversation.state === "await_service") {
+    if (isAppointmentBookingIntent(normalize(message)) || normalize(message) === "2") {
+      return transition(
+        conversation,
+        "await_service",
+        context,
+        `Ya estamos agendando tu cita.\n\n${await serviceList()}\n\n¿Cuál tratamiento deseas agendar?`,
+      );
+    }
     const service = await selectService(message);
     if (!service) {
       return transition(

@@ -81,6 +81,7 @@ export function whatsappReminderTemplatesConfigured(): boolean {
 export async function sendWhatsAppTemplate(
   to: string,
   templateName: string,
+  languageCode: string,
   parameters: string[],
 ): Promise<string | undefined> {
   const token = process.env.WHATSAPP_ACCESS_TOKEN;
@@ -104,7 +105,7 @@ export async function sendWhatsAppTemplate(
         template: {
           name: templateName,
           language: {
-            code: process.env.WHATSAPP_REMINDER_LANGUAGE ?? "es_MX",
+            code: languageCode,
           },
           components: [
             {
