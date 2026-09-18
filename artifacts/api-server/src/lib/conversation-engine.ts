@@ -578,8 +578,30 @@ async function processState(
   message: string,
 ): Promise<BotReply | undefined> {
   const context = conversation.context ?? {};
+  const normalizedMessage = normalize(message);
+  const appointmentCreationStates: Conversation["state"][] = [
+    "await_service",
+    "await_date",
+    "await_time",
+    "await_name",
+    "await_phone",
+    "await_confirm",
+  ];
+  if (
+    appointmentCreationStates.includes(conversation.state) &&
+    /^(cancelar|cancelar cita|salir)$/.test(normalizedMessage)
+  ) {
+    return transition(
+      conversation,
+      "idle",
+      context.serviceId
+        ? { serviceId: context.serviceId, serviceName: context.serviceName }
+        : {},
+      `Se canceló el proceso de agendar la cita.\n\n${menu}`,
+    );
+  }
   if (conversation.state === "await_service") {
-    if (isAppointmentBookingIntent(normalize(message)) || normalize(message) === "2") {
+    if (isAppointmentBookingIntent(normalizedMessage) || normalizedMessage === "2") {
       return transition(
         conversation,
         "await_service",
@@ -611,6 +633,19 @@ async function processState(
   if (conversation.state === "await_date") {
     const date = parseDate(message);
     if (!date || !validDate(date)) {
+      const faq = await findFaq(
+        message,
+        context.serviceName,
+        context.serviceId,
+      );
+      if (faq) {
+        return transition(
+          conversation,
+          "await_date",
+          context,
+          `${faq.answer}\n\nEsta información es general y no sustituye una valoración profesional.\n\nPara continuar con la cita, escribe la fecha que prefieres, por ejemplo *mañana* o *20/09/2026*.`,
+        );
+      }
       return transition(
         conversation,
         "await_date",
