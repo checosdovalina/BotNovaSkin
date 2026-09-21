@@ -1,0 +1,59 @@
+[root@localhost ~]# cd /opt/botnovaskin
+git status --short
+git rev-parse --short HEAD
+fatal: detected dubious ownership in repository at '/opt/botnovaskin'
+To add an exception for this directory, call:
+
+	git config --global --add safe.directory /opt/botnovaskin
+fatal: detected dubious ownership in repository at '/opt/botnovaskin'
+To add an exception for this directory, call:
+
+	git config --global --add safe.directory /opt/botnovaskin
+[root@localhost botnovaskin]# systemctl list-unit-files --type=service | grep -Ei 'bot|nova|skin|whatsapp'
+botnovaskin-api.service                    enabled         disabled
+certbot-renew.service                      static          -
+novaskin-api.service                       enabled         disabled
+[root@localhost botnovaskin]# systemctl show botnovaskin-api novaskin-api \
+  -p Id \
+  -p ActiveState \
+  -p SubState \
+  -p MainPID \
+  -p WorkingDirectory \
+  -p ExecStart
+MainPID=2153139
+ExecStart={ path=/usr/bin/node ; argv[]=/usr/bin/node --enable-source-maps /opt/botnovaskin/artifacts/api-server/dist/index.mjs ; ignore_errors=no ; start_time=[Fri 2026-09-18 1>
+WorkingDirectory=/opt/botnovaskin
+Id=botnovaskin-api.service
+ActiveState=active
+SubState=running
+
+MainPID=1624587
+ExecStart={ path=/usr/bin/node ; argv[]=/usr/bin/node /opt/novaskin/artifacts/api-server/dist/index.mjs ; ignore_errors=no ; start_time=[Fri 2026-09-11 00:17:07 UTC] ; stop_time>
+WorkingDirectory=/opt/novaskin
+Id=novaskin-api.service
+ActiveState=active
+SubState=running
+...skipping...
+MainPID=2153139
+ExecStart={ path=/usr/bin/node ; argv[]=/usr/bin/node --enable-source-maps /opt/botnovaskin/artifacts/api-server/dist/index.mjs ; ignore_errors=no ; start_time=[Fri 2026-09-18 1>
+WorkingDirectory=/opt/botnovaskin
+Id=botnovaskin-api.service
+ActiveState=active
+SubState=running
+
+MainPID=1624587
+ExecStart={ path=/usr/bin/node ; argv[]=/usr/bin/node /opt/novaskin/artifacts/api-server/dist/index.mjs ; ignore_errors=no ; start_time=[Fri 2026-09-11 00:17:07 UTC] ; stop_time>
+WorkingDirectory=/opt/novaskin
+Id=novaskin-api.service
+ActiveState=active
+SubState=running
+~
+~
+~
+~
+~
+~
+~
+~
+~
+lines 1-13/13 (END)
