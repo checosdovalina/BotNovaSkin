@@ -333,6 +333,18 @@ async function selectService(message: string) {
   );
 }
 
+async function selectServiceByExactName(message: string) {
+  const aliases: Record<string, string> = {
+    botox: "toxina botulinica",
+  };
+  const normalizedMessage = normalize(message);
+  const expectedName = aliases[normalizedMessage] ?? normalizedMessage;
+  const services = await activeServices();
+  return services.find(
+    (service) => normalize(service.name) === expectedName,
+  );
+}
+
 async function findFaq(
   message: string,
   serviceHint?: string,
@@ -1092,6 +1104,7 @@ export async function processConversationMessage(input: {
     if (stateResult) {
       result = stateResult;
     } else {
+      const exactService = await selectServiceByExactName(input.message);
       const valuationPriceIntent =
         normalized.includes("valoracion") &&
         (normalized.includes("precio") ||
@@ -1125,6 +1138,7 @@ export async function processConversationMessage(input: {
         businessHoursIntent ||
         businessLocationIntent ||
         skinboosterBotoxComparisonIntent ||
+        Boolean(exactService) ||
         normalized === "6" ||
         normalized === "2" ||
         normalized === "3" ||
@@ -1235,6 +1249,17 @@ export async function processConversationMessage(input: {
             "",
             "La opción adecuada depende de tus objetivos y debe definirse durante una valoración profesional.",
           ].join("\n"),
+        );
+      } else if (exactService) {
+        result = await transition(
+          conversation,
+          "idle",
+          { serviceId: exactService.id, serviceName: exactService.name },
+          `*${exactService.name}*\n${exactService.description}\nDuración aproximada: ${exactService.durationMinutes} minutos.\nPrecio: ${
+            exactService.price > 0
+              ? currency(exactService.price)
+              : "se confirma en valoración"
+          }.\n\nPuedes escribir tu pregunta sobre este tratamiento o escribir *cita* para agendar.`,
         );
       } else if (
         normalized === "6" ||
