@@ -42,6 +42,7 @@ const menu = [
   "3. Cancelar una cita",
   "4. Reprogramar una cita",
   "5. Hablar con recepción",
+  "6. Preguntas generales",
 ].join("\n");
 
 const medicalKeywords = [
@@ -295,6 +296,22 @@ async function serviceList(): Promise<string> {
     ),
     "",
     "Escribe el número o nombre del tratamiento para conocer los detalles o escribe *cita* para agendar.",
+  ].join("\n");
+}
+
+async function generalQuestionsServiceList(): Promise<string> {
+  const services = await activeServices();
+  if (services.length === 0) {
+    return "Por el momento no hay tratamientos activos. Escribe *recepción* para que una persona te ayude.";
+  }
+  return [
+    "¿Sobre cuál tratamiento tienes una pregunta?",
+    "",
+    ...services.map(
+      (service, index) => `${index + 1}. *${service.name}*`,
+    ),
+    "",
+    "Escribe el número o nombre del tratamiento.",
   ].join("\n");
 }
 
@@ -587,6 +604,23 @@ async function processState(
     "await_phone",
     "await_confirm",
   ];
+  if (conversation.state === "await_general_service") {
+    const service = await selectService(message);
+    if (!service) {
+      return transition(
+        conversation,
+        "await_general_service",
+        {},
+        `No identifiqué ese tratamiento.\n\n${await generalQuestionsServiceList()}`,
+      );
+    }
+    return transition(
+      conversation,
+      "idle",
+      { serviceId: service.id, serviceName: service.name },
+      `Seleccionaste *${service.name}*.\n\nEscribe tu pregunta y te responderé con la información aprobada que tenemos sobre este tratamiento.`,
+    );
+  }
   if (
     appointmentCreationStates.includes(conversation.state) &&
     /^(cancelar|cancelar cita|salir)$/.test(normalizedMessage)
@@ -1091,6 +1125,7 @@ export async function processConversationMessage(input: {
         businessHoursIntent ||
         businessLocationIntent ||
         skinboosterBotoxComparisonIntent ||
+        normalized === "6" ||
         normalized === "2" ||
         normalized === "3" ||
         normalized === "4" ||
@@ -1201,6 +1236,17 @@ export async function processConversationMessage(input: {
             "La opción adecuada depende de tus objetivos y debe definirse durante una valoración profesional.",
           ].join("\n"),
         );
+      } else if (
+        normalized === "6" ||
+        normalized.includes("pregunta general") ||
+        normalized.includes("preguntas generales")
+      ) {
+        result = await transition(
+          conversation,
+          "await_general_service",
+          {},
+          await generalQuestionsServiceList(),
+        );
       } else if (unsupportedSessionIntent) {
         result = await transition(
           conversation,
@@ -1277,7 +1323,7 @@ export async function processConversationMessage(input: {
             conversation,
             "idle",
             {},
-            `No encontré una respuesta exacta. Puedes escribir *tratamientos*, *cita*, *cancelar*, *reprogramar* o *recepción*.\n\n${menu}`,
+            `No encontré una respuesta exacta. Puedes escribir *tratamientos*, *preguntas generales*, *cita*, *cancelar*, *reprogramar* o *recepción*.\n\n${menu}`,
           );
         }
       }
