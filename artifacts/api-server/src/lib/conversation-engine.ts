@@ -315,6 +315,29 @@ async function generalQuestionsServiceList(): Promise<string> {
   ].join("\n");
 }
 
+async function appointmentServiceList(
+  purpose: "treatment" | "valuation" = "treatment",
+): Promise<string> {
+  const services = await activeServices();
+  if (services.length === 0) {
+    return "Por el momento no hay tratamientos activos. Escribe *recepción* para que una persona te ayude.";
+  }
+  return [
+    purpose === "valuation"
+      ? "¿Para qué tratamiento te gustaría agendar una valoración?"
+      : "¿Qué tratamiento te gustaría agendar?",
+    "",
+    ...services.map(
+      (service, index) =>
+        `${index + 1}. *${service.name}* — ${
+          service.price > 0 ? currency(service.price) : "precio por valoración"
+        }`,
+    ),
+    "",
+    "Responde con el número o nombre del tratamiento para continuar con tu cita.",
+  ].join("\n");
+}
+
 async function selectService(message: string) {
   const services = await activeServices();
   const choice = Number(normalize(message));
@@ -553,9 +576,7 @@ async function startAppointment(
     conversation,
     "await_service",
     { appointmentPurpose: purpose },
-    purpose === "valuation"
-      ? `${await serviceList()}\n\n¿Para qué tratamiento deseas agendar la valoración?`
-      : `${await serviceList()}\n\n¿Cuál tratamiento deseas agendar?`,
+    await appointmentServiceList(purpose),
     "bot",
   );
 }
@@ -652,7 +673,9 @@ async function processState(
         conversation,
         "await_service",
         context,
-        `Ya estamos agendando tu cita.\n\n${await serviceList()}\n\n¿Cuál tratamiento deseas agendar?`,
+        `Ya estamos agendando tu cita.\n\n${await appointmentServiceList(
+          context.appointmentPurpose ?? "treatment",
+        )}`,
       );
     }
     const service = await selectService(message);
@@ -661,7 +684,9 @@ async function processState(
         conversation,
         "await_service",
         context,
-        `No identifiqué ese tratamiento.\n\n${await serviceList()}`,
+        `No identifiqué ese tratamiento.\n\n${await appointmentServiceList(
+          context.appointmentPurpose ?? "treatment",
+        )}`,
       );
     }
     return transition(
