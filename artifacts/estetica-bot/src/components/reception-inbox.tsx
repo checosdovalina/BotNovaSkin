@@ -11,6 +11,7 @@ import {
 } from '@workspace/api-client-react';
 import { Button, ErrorState, inputClass } from '@/components/common';
 import { useToast } from '@/hooks/use-toast';
+import { ReceptionPushSettings } from './reception-push-settings';
 
 function maskedPhone(phone: string) {
   if (phone.startsWith('simulator:')) return 'Simulador del panel';
@@ -105,7 +106,7 @@ export function ReceptionInbox() {
         <div>
           <p className="text-[10px] font-bold uppercase tracking-[.16em] text-primary">Atención humana</p>
            <h2 className="mt-1 text-[17px] font-semibold">Conversaciones del bot y recepción {pending.length > 0 && <span className="ml-1 rounded-full bg-primary px-2 py-0.5 text-xs text-primary-foreground">{pending.length} pendientes</span>}</h2>
-          <p className="mt-1 text-xs text-muted-foreground">Consulta el historial; responde en el mismo chat cuando el cliente pida atención humana. Las solicitudes nuevas se notifican mientras esta página está abierta.</p>
+           <p className="mt-1 text-xs text-muted-foreground">Consulta el historial; responde en el mismo chat cuando el cliente pida atención humana. El contador y los avisos en la app funcionan mientras esta página está abierta.</p>
         </div>
       </div>
        <div className="flex gap-2">
@@ -114,6 +115,7 @@ export function ReceptionInbox() {
        </div>
     </div>
 
+     <ReceptionPushSettings />
     <div className="mt-5">
       {handoffs.isError ? <ErrorState onRetry={() => void handoffs.refetch()} message={errorMessage(handoffs.error)} /> : handoffs.isLoading ? <p className="text-sm text-muted-foreground">Cargando conversaciones…</p> : <div>
         <div className="mb-4 flex flex-wrap gap-2" role="group" aria-label="Filtrar conversaciones">

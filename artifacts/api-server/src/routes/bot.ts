@@ -1,4 +1,7 @@
 import { Router, type IRouter } from "express";
+import { getAuth } from "@clerk/express";
+import { db, receptionPushSubscriptionsTable } from "@workspace/db";
+import { and, eq } from "drizzle-orm";
 import {
   GetBotStatusResponse,
   ListBotConversationMessagesParams,
@@ -13,6 +16,9 @@ import {
   UpdateBotConversationBody,
   UpdateBotConversationParams,
   UpdateBotConversationResponse,
+  GetReceptionPushKeyResponse,
+  SubscribeReceptionPushBody,
+  UnsubscribeReceptionPushBody,
 } from "@workspace/api-zod";
 import {
   listConversations,
@@ -25,9 +31,45 @@ import {
 } from "../lib/conversation-engine";
 import { whatsappConfigured } from "../lib/whatsapp";
 import { requireReception } from "../middlewares/requireReception";
+import { getPushKeys, validPushEndpoint } from "../lib/reception-push";
 
 const router: IRouter = Router();
 router.use("/bot", requireReception);
+
+router.get("/bot/push", async (_req, res): Promise<void> => {
+  const keys = await getPushKeys();
+  res.json(GetReceptionPushKeyResponse.parse({ publicKey: keys.publicKey }));
+});
+
+router.post("/bot/push", async (req, res): Promise<void> => {
+  const parsed = SubscribeReceptionPushBody.safeParse(req.body);
+  if (!parsed.success || !validPushEndpoint(parsed.data.endpoint)) {
+    res.status(400).json({ error: "Suscripción de navegador inválida" });
+    return;
+  }
+  const userId = getAuth(req).userId!;
+  await db.insert(receptionPushSubscriptionsTable).values({
+    endpoint: parsed.data.endpoint, userId,
+    p256dh: parsed.data.keys.p256dh, auth: parsed.data.keys.auth,
+  }).onConflictDoUpdate({
+    target: receptionPushSubscriptionsTable.endpoint,
+    set: { userId, p256dh: parsed.data.keys.p256dh, auth: parsed.data.keys.auth },
+  });
+  res.sendStatus(204);
+});
+
+router.delete("/bot/push", async (req, res): Promise<void> => {
+  const parsed = UnsubscribeReceptionPushBody.safeParse(req.body);
+  if (!parsed.success || !validPushEndpoint(parsed.data.endpoint)) {
+    res.status(400).json({ error: "Suscripción de navegador inválida" });
+    return;
+  }
+  await db.delete(receptionPushSubscriptionsTable).where(and(
+    eq(receptionPushSubscriptionsTable.endpoint, parsed.data.endpoint),
+    eq(receptionPushSubscriptionsTable.userId, getAuth(req).userId!),
+  ));
+  res.sendStatus(204);
+});
 
 router.get("/bot/status", async (_req, res): Promise<void> => {
   const connected = whatsappConfigured();

@@ -44,6 +44,9 @@ import type {
   ListBotConversationsParams,
   ListFaqsParams,
   NotFoundResponse,
+  ReceptionPushKey,
+  ReceptionPushRemoval,
+  ReceptionPushSubscription,
   Service,
   ServiceInput,
   ServiceUpdate
@@ -1207,6 +1210,225 @@ export function useGetBotStatus<TData = Awaited<ReturnType<typeof getBotStatus>>
 
 
 
+
+export const getGetReceptionPushKeyUrl = () => {
+
+
+
+
+  return `/api/bot/push`
+}
+
+/**
+ * @summary Obtener clave pública de avisos de recepción
+ */
+export const getReceptionPushKey = async ( options?: Parameters<typeof customFetch>[1]): Promise<ReceptionPushKey> => {
+
+  return customFetch<ReceptionPushKey>(getGetReceptionPushKeyUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetReceptionPushKeyQueryKey = () => {
+    return [
+    `/api/bot/push`
+    ] as const;
+    }
+
+
+export const getGetReceptionPushKeyQueryOptions = <TData = Awaited<ReturnType<typeof getReceptionPushKey>>, TError = ErrorType<unknown>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getReceptionPushKey>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetReceptionPushKeyQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getReceptionPushKey>>> = ({ signal }) => getReceptionPushKey({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getReceptionPushKey>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetReceptionPushKeyQueryResult = NonNullable<Awaited<ReturnType<typeof getReceptionPushKey>>>
+export type GetReceptionPushKeyQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary Obtener clave pública de avisos de recepción
+ */
+
+export function useGetReceptionPushKey<TData = Awaited<ReturnType<typeof getReceptionPushKey>>, TError = ErrorType<unknown>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getReceptionPushKey>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetReceptionPushKeyQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getSubscribeReceptionPushUrl = () => {
+
+
+
+
+  return `/api/bot/push`
+}
+
+/**
+ * @summary Activar avisos en este navegador
+ */
+export const subscribeReceptionPush = async (receptionPushSubscription: ReceptionPushSubscription, options?: Parameters<typeof customFetch>[1]): Promise<void> => {
+
+  return customFetch<void>(getSubscribeReceptionPushUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(receptionPushSubscription)
+  }
+);}
+
+
+
+
+
+export const getSubscribeReceptionPushMutationOptions = <TError = ErrorType<BadRequestResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof subscribeReceptionPush>>, TError,{data: BodyType<ReceptionPushSubscription>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof subscribeReceptionPush>>, TError,{data: BodyType<ReceptionPushSubscription>}, TContext> => {
+
+const mutationKey = ['subscribeReceptionPush'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof subscribeReceptionPush>>, {data: BodyType<ReceptionPushSubscription>}> = (props) => {
+          const {data} = props ?? {};
+
+          return  subscribeReceptionPush(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type SubscribeReceptionPushMutationResult = NonNullable<Awaited<ReturnType<typeof subscribeReceptionPush>>>
+    export type SubscribeReceptionPushMutationBody = BodyType<ReceptionPushSubscription>
+    export type SubscribeReceptionPushMutationError = ErrorType<BadRequestResponse>
+
+    /**
+ * @summary Activar avisos en este navegador
+ */
+export const useSubscribeReceptionPush = <TError = ErrorType<BadRequestResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof subscribeReceptionPush>>, TError,{data: BodyType<ReceptionPushSubscription>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof subscribeReceptionPush>>,
+        TError,
+        {data: BodyType<ReceptionPushSubscription>},
+        TContext
+      > => {
+      return useMutation(getSubscribeReceptionPushMutationOptions(options));
+    }
+
+export const getUnsubscribeReceptionPushUrl = () => {
+
+
+
+
+  return `/api/bot/push`
+}
+
+/**
+ * @summary Desactivar avisos en este navegador
+ */
+export const unsubscribeReceptionPush = async (receptionPushRemoval: ReceptionPushRemoval, options?: Parameters<typeof customFetch>[1]): Promise<void> => {
+
+  return customFetch<void>(getUnsubscribeReceptionPushUrl(),
+  {
+    ...options,
+    method: 'DELETE',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(receptionPushRemoval)
+  }
+);}
+
+
+
+
+
+export const getUnsubscribeReceptionPushMutationOptions = <TError = ErrorType<BadRequestResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof unsubscribeReceptionPush>>, TError,{data: BodyType<ReceptionPushRemoval>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof unsubscribeReceptionPush>>, TError,{data: BodyType<ReceptionPushRemoval>}, TContext> => {
+
+const mutationKey = ['unsubscribeReceptionPush'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof unsubscribeReceptionPush>>, {data: BodyType<ReceptionPushRemoval>}> = (props) => {
+          const {data} = props ?? {};
+
+          return  unsubscribeReceptionPush(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type UnsubscribeReceptionPushMutationResult = NonNullable<Awaited<ReturnType<typeof unsubscribeReceptionPush>>>
+    export type UnsubscribeReceptionPushMutationBody = BodyType<ReceptionPushRemoval>
+    export type UnsubscribeReceptionPushMutationError = ErrorType<BadRequestResponse>
+
+    /**
+ * @summary Desactivar avisos en este navegador
+ */
+export const useUnsubscribeReceptionPush = <TError = ErrorType<BadRequestResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof unsubscribeReceptionPush>>, TError,{data: BodyType<ReceptionPushRemoval>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof unsubscribeReceptionPush>>,
+        TError,
+        {data: BodyType<ReceptionPushRemoval>},
+        TContext
+      > => {
+      return useMutation(getUnsubscribeReceptionPushMutationOptions(options));
+    }
 
 export const getSimulateBotUrl = () => {
 

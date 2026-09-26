@@ -350,6 +350,50 @@ export const GetBotStatusResponse = zod.object({
 
 
 /**
+ * @summary Obtener clave pública de avisos de recepción
+ */
+export const GetReceptionPushKeyResponse = zod.object({
+  "publicKey": zod.string()
+})
+
+
+/**
+ * @summary Activar avisos en este navegador
+ */
+export const subscribeReceptionPushBodyEndpointMax = 2048;
+
+export const subscribeReceptionPushBodyKeysP256dhMax = 256;
+
+export const subscribeReceptionPushBodyKeysAuthMax = 256;
+
+
+
+export const SubscribeReceptionPushBody = zod.object({
+  "endpoint": zod.string().max(subscribeReceptionPushBodyEndpointMax),
+  "keys": zod.object({
+  "p256dh": zod.string().min(1).max(subscribeReceptionPushBodyKeysP256dhMax),
+  "auth": zod.string().min(1).max(subscribeReceptionPushBodyKeysAuthMax)
+})
+})
+
+export const SubscribeReceptionPushResponse = zod.void()
+
+
+/**
+ * @summary Desactivar avisos en este navegador
+ */
+export const unsubscribeReceptionPushBodyEndpointMax = 2048;
+
+
+
+export const UnsubscribeReceptionPushBody = zod.object({
+  "endpoint": zod.string().max(unsubscribeReceptionPushBodyEndpointMax)
+})
+
+export const UnsubscribeReceptionPushResponse = zod.void()
+
+
+/**
  * @summary Probar el motor de conversación
  */
 export const simulateBotBodyMessageMax = 2000;

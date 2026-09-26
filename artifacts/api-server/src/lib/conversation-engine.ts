@@ -20,6 +20,7 @@ import {
 } from "@workspace/db";
 import { answerWithApprovedKnowledge } from "./ai-assistant";
 import { sendWhatsAppText, whatsappConfigured } from "./whatsapp";
+import { notifyReceptionOfHandoff } from "./reception-push";
 
 const appointmentTimes = [
   "09:00",
@@ -584,6 +585,9 @@ async function transition(
     status,
     lastMessageAt: new Date(),
   });
+  if (conversation.status !== "human" && updated.status === "human" && !conversation.phone.startsWith("simulator:")) {
+    void notifyReceptionOfHandoff();
+  }
   return {
     reply,
     handoff: updated.status === "human",
@@ -1574,6 +1578,8 @@ export async function setConversationStatus(
   id: number,
   status: "bot" | "human" | "closed",
 ) {
+  const [previous] = await db.select({ status: conversationsTable.status })
+    .from(conversationsTable).where(eq(conversationsTable.id, id));
   const [updated] = await db
     .update(conversationsTable)
     .set({
@@ -1584,6 +1590,9 @@ export async function setConversationStatus(
     })
     .where(eq(conversationsTable.id, id))
     .returning();
+  if (previous && previous.status !== "human" && updated?.status === "human" && !updated.phone.startsWith("simulator:")) {
+    void notifyReceptionOfHandoff();
+  }
   return updated;
 }
 

@@ -5,6 +5,34 @@
  * API para el panel del bot de citas de una estética
  * OpenAPI spec version: 0.1.0
  */
+export interface ReceptionPushKey {
+  publicKey: string;
+}
+
+export type ReceptionPushSubscriptionKeys = {
+  /**
+     * @minLength 1
+     * @maxLength 256
+     */
+  p256dh: string;
+  /**
+     * @minLength 1
+     * @maxLength 256
+     */
+  auth: string;
+};
+
+export interface ReceptionPushSubscription {
+  /** @maxLength 2048 */
+  endpoint: string;
+  keys: ReceptionPushSubscriptionKeys;
+}
+
+export interface ReceptionPushRemoval {
+  /** @maxLength 2048 */
+  endpoint: string;
+}
+
 export interface HealthStatus {
   status: string;
 }

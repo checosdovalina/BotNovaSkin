@@ -315,6 +315,48 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/BotStatus"
+  /bot/push:
+    get:
+      operationId: getReceptionPushKey
+      tags: [bot]
+      summary: Obtener clave pública de avisos de recepción
+      responses:
+        "200":
+          description: Clave pública VAPID
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ReceptionPushKey"
+    post:
+      operationId: subscribeReceptionPush
+      tags: [bot]
+      summary: Activar avisos en este navegador
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ReceptionPushSubscription"
+      responses:
+        "204":
+          description: Suscripción guardada
+        "400":
+          $ref: "#/components/responses/BadRequest"
+    delete:
+      operationId: unsubscribeReceptionPush
+      tags: [bot]
+      summary: Desactivar avisos en este navegador
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ReceptionPushRemoval"
+      responses:
+        "204":
+          description: Suscripción eliminada
+        "400":
+          $ref: "#/components/responses/BadRequest"
   /bot/simulate:
     post:
       operationId: simulateBot
@@ -428,6 +470,27 @@ paths:
           description: Canal no disponible o envío fallido
 components:
   schemas:
+    ReceptionPushKey:
+      type: object
+      required: [publicKey]
+      properties:
+        publicKey: { type: string }
+    ReceptionPushSubscription:
+      type: object
+      required: [endpoint, keys]
+      properties:
+        endpoint: { type: string, maxLength: 2048 }
+        keys:
+          type: object
+          required: [p256dh, auth]
+          properties:
+            p256dh: { type: string, minLength: 1, maxLength: 256 }
+            auth: { type: string, minLength: 1, maxLength: 256 }
+    ReceptionPushRemoval:
+      type: object
+      required: [endpoint]
+      properties:
+        endpoint: { type: string, maxLength: 2048 }
     HealthStatus:
       type: object
       properties:
