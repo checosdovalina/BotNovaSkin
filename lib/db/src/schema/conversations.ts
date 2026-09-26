@@ -13,6 +13,7 @@ import { z } from "zod/v4";
 export const conversationStatusValues = ["bot", "human", "closed"] as const;
 export const conversationStateValues = [
   "idle",
+  "await_catalog_service",
   "await_general_service",
   "await_service",
   "await_date",
