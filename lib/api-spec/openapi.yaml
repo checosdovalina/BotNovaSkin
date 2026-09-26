@@ -383,24 +383,26 @@ paths:
     get:
       operationId: listBotConversationMessages
       tags: [bot]
-      summary: Leer los mensajes de una conversación derivada
+      summary: Leer historial de una conversación
       parameters:
         - $ref: "#/components/parameters/Id"
       responses:
         "200":
-          description: Mensajes en orden cronológico
+          description: Mensajes ordenados cronológicamente
           content:
             application/json:
               schema:
                 type: array
                 items:
                   $ref: "#/components/schemas/BotConversationMessage"
+        "400":
+          $ref: "#/components/responses/BadRequest"
         "404":
           $ref: "#/components/responses/NotFound"
     post:
       operationId: sendBotConversationMessage
       tags: [bot]
-      summary: Responder desde recepción por WhatsApp
+      summary: Responder desde recepción por WhatsApp Cloud API
       parameters:
         - $ref: "#/components/parameters/Id"
       requestBody:
@@ -410,8 +412,8 @@ paths:
             schema:
               $ref: "#/components/schemas/BotConversationMessageInput"
       responses:
-        "200":
-          description: Mensaje enviado
+        "201":
+          description: Mensaje aceptado por WhatsApp
           content:
             application/json:
               schema:
@@ -420,6 +422,10 @@ paths:
           $ref: "#/components/responses/BadRequest"
         "404":
           $ref: "#/components/responses/NotFound"
+        "409":
+          description: La conversación no está asignada a recepción
+        "503":
+          description: Canal no disponible o envío fallido
 components:
   schemas:
     HealthStatus:
@@ -753,11 +759,11 @@ components:
     BotConversationMessageInput:
       type: object
       properties:
-        message:
+        body:
           type: string
           minLength: 1
           maxLength: 2000
-      required: [message]
+      required: [body]
   parameters:
     Id:
       name: id

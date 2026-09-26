@@ -227,7 +227,7 @@ export interface BotConversationMessageInput {
      * @minLength 1
      * @maxLength 2000
      */
-  message: string;
+  body: string;
 }
 
 /**

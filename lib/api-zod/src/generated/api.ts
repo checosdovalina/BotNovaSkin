@@ -410,7 +410,7 @@ export const UpdateBotConversationResponse = zod.object({
 
 
 /**
- * @summary Leer los mensajes de una conversación derivada
+ * @summary Leer historial de una conversación
  */
 export const ListBotConversationMessagesParams = zod.object({
   "id": zod.coerce.number()
@@ -427,18 +427,18 @@ export const ListBotConversationMessagesResponse = zod.array(ListBotConversation
 
 
 /**
- * @summary Responder desde recepción por WhatsApp
+ * @summary Responder desde recepción por WhatsApp Cloud API
  */
 export const SendBotConversationMessageParams = zod.object({
   "id": zod.coerce.number()
 })
 
-export const sendBotConversationMessageBodyMessageMax = 2000;
+export const sendBotConversationMessageBodyBodyMax = 2000;
 
 
 
 export const SendBotConversationMessageBody = zod.object({
-  "message": zod.string().min(1).max(sendBotConversationMessageBodyMessageMax)
+  "body": zod.string().min(1).max(sendBotConversationMessageBodyBodyMax)
 })
 
 export const SendBotConversationMessageResponse = zod.object({

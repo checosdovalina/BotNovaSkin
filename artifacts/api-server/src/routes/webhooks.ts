@@ -83,10 +83,15 @@ router.post("/webhooks/whatsapp", async (req, res): Promise<void> => {
         const body = messageBody(message);
         if (!message.from || !message.id) continue;
         if (!body) {
-          await sendWhatsAppText(
-            message.from,
-            "Por ahora puedo atender mensajes de texto. Escribe *hola* para ver el menú.",
-          );
+          const result = await processConversationMessage({
+            phone: message.from,
+            message: `[${message.type ?? "Archivo"} recibido; contenido no disponible en este panel]`,
+            providerMessageId: message.id,
+            clientName,
+            unsupportedMedia: true,
+          });
+          if (result.reply) await sendWhatsAppText(message.from, result.reply);
+          processed += 1;
           continue;
         }
         const result = await processConversationMessage({

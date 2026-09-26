@@ -1444,7 +1444,7 @@ export const getListBotConversationMessagesUrl = (id: number,) => {
 }
 
 /**
- * @summary Leer los mensajes de una conversación derivada
+ * @summary Leer historial de una conversación
  */
 export const listBotConversationMessages = async (id: number, options?: Parameters<typeof customFetch>[1]): Promise<BotConversationMessage[]> => {
 
@@ -1468,7 +1468,7 @@ export const getListBotConversationMessagesQueryKey = (id: number,) => {
     }
 
 
-export const getListBotConversationMessagesQueryOptions = <TData = Awaited<ReturnType<typeof listBotConversationMessages>>, TError = ErrorType<NotFoundResponse>>(id: number, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listBotConversationMessages>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+export const getListBotConversationMessagesQueryOptions = <TData = Awaited<ReturnType<typeof listBotConversationMessages>>, TError = ErrorType<BadRequestResponse | NotFoundResponse>>(id: number, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listBotConversationMessages>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
 ) => {
 
 const {query: queryOptions, request: requestOptions} = options ?? {};
@@ -1487,14 +1487,14 @@ const {query: queryOptions, request: requestOptions} = options ?? {};
 }
 
 export type ListBotConversationMessagesQueryResult = NonNullable<Awaited<ReturnType<typeof listBotConversationMessages>>>
-export type ListBotConversationMessagesQueryError = ErrorType<NotFoundResponse>
+export type ListBotConversationMessagesQueryError = ErrorType<BadRequestResponse | NotFoundResponse>
 
 
 /**
- * @summary Leer los mensajes de una conversación derivada
+ * @summary Leer historial de una conversación
  */
 
-export function useListBotConversationMessages<TData = Awaited<ReturnType<typeof listBotConversationMessages>>, TError = ErrorType<NotFoundResponse>>(
+export function useListBotConversationMessages<TData = Awaited<ReturnType<typeof listBotConversationMessages>>, TError = ErrorType<BadRequestResponse | NotFoundResponse>>(
  id: number, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listBotConversationMessages>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
 
  ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
@@ -1521,7 +1521,7 @@ export const getSendBotConversationMessageUrl = (id: number,) => {
 }
 
 /**
- * @summary Responder desde recepción por WhatsApp
+ * @summary Responder desde recepción por WhatsApp Cloud API
  */
 export const sendBotConversationMessage = async (id: number,
     botConversationMessageInput: BotConversationMessageInput, options?: Parameters<typeof customFetch>[1]): Promise<BotConversationMessage> => {
@@ -1539,7 +1539,7 @@ export const sendBotConversationMessage = async (id: number,
 
 
 
-export const getSendBotConversationMessageMutationOptions = <TError = ErrorType<BadRequestResponse | NotFoundResponse>,
+export const getSendBotConversationMessageMutationOptions = <TError = ErrorType<BadRequestResponse | NotFoundResponse | void>,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof sendBotConversationMessage>>, TError,{id: number;data: BodyType<BotConversationMessageInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
 ): UseMutationOptions<Awaited<ReturnType<typeof sendBotConversationMessage>>, TError,{id: number;data: BodyType<BotConversationMessageInput>}, TContext> => {
 
@@ -1568,12 +1568,12 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
 
     export type SendBotConversationMessageMutationResult = NonNullable<Awaited<ReturnType<typeof sendBotConversationMessage>>>
     export type SendBotConversationMessageMutationBody = BodyType<BotConversationMessageInput>
-    export type SendBotConversationMessageMutationError = ErrorType<BadRequestResponse | NotFoundResponse>
+    export type SendBotConversationMessageMutationError = ErrorType<BadRequestResponse | NotFoundResponse | void>
 
     /**
- * @summary Responder desde recepción por WhatsApp
+ * @summary Responder desde recepción por WhatsApp Cloud API
  */
-export const useSendBotConversationMessage = <TError = ErrorType<BadRequestResponse | NotFoundResponse>,
+export const useSendBotConversationMessage = <TError = ErrorType<BadRequestResponse | NotFoundResponse | void>,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof sendBotConversationMessage>>, TError,{id: number;data: BodyType<BotConversationMessageInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
  ): UseMutationResult<
         Awaited<ReturnType<typeof sendBotConversationMessage>>,

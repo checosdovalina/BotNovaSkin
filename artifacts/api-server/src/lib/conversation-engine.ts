@@ -19,6 +19,7 @@ import {
   type Conversation,
 } from "@workspace/db";
 import { answerWithApprovedKnowledge } from "./ai-assistant";
+import { sendWhatsAppText, whatsappConfigured } from "./whatsapp";
 
 const appointmentTimes = [
   "09:00",
@@ -1149,6 +1150,7 @@ export async function processConversationMessage(input: {
   message: string;
   providerMessageId?: string;
   clientName?: string;
+  unsupportedMedia?: boolean;
 }): Promise<BotReply> {
   let conversation = await getConversation(input.phone);
 
@@ -1189,6 +1191,31 @@ export async function processConversationMessage(input: {
   const normalized = normalize(input.message);
   let result: BotReply;
 
+  // A handoff is controlled by reception, not by customer keywords.
+  if (conversation.status === "human") {
+    return {
+      reply: "",
+      handoff: true,
+      state: conversation.state,
+      conversationId: conversation.id,
+    };
+  }
+  if (conversation.status === "closed") {
+    conversation = await updateConversation(conversation.id, {
+      status: "bot", state: "idle", context: {},
+    });
+  }
+  if (input.unsupportedMedia) {
+    const reply = "Por ahora puedo atender mensajes de texto. Escribe *hola* para ver el menú.";
+    await db.insert(conversationMessagesTable).values({
+      conversationId: conversation.id, direction: "outbound",
+      body: reply, status: "generated",
+    });
+    return {
+      reply, handoff: false, state: conversation.state,
+      conversationId: conversation.id,
+    };
+  }
   if (/^(menu|inicio|hola|hi|buenas|buen dia|buenas tardes|buenas noches)$/.test(normalized)) {
     result =
       conversation.status === "human" && normalized !== "inicio"
@@ -1558,4 +1585,64 @@ export async function setConversationStatus(
     .where(eq(conversationsTable.id, id))
     .returning();
   return updated;
+}
+
+export async function listConversationMessages(id: number) {
+  const [conversation] = await db
+    .select({ id: conversationsTable.id })
+    .from(conversationsTable)
+    .where(eq(conversationsTable.id, id));
+  if (!conversation) return undefined;
+  return db.select({
+    id: conversationMessagesTable.id,
+    direction: conversationMessagesTable.direction,
+    body: conversationMessagesTable.body,
+    status: conversationMessagesTable.status,
+    createdAt: conversationMessagesTable.createdAt,
+  }).from(conversationMessagesTable)
+    .where(eq(conversationMessagesTable.conversationId, id))
+    .orderBy(asc(conversationMessagesTable.createdAt), asc(conversationMessagesTable.id));
+}
+
+export class ManualReplyError extends Error {
+  constructor(public readonly code: 404 | 409 | 503, message: string) {
+    super(message);
+  }
+}
+
+export async function sendReceptionReply(id: number, body: string) {
+  const [conversation] = await db.select().from(conversationsTable)
+    .where(eq(conversationsTable.id, id));
+  if (!conversation) throw new ManualReplyError(404, "Conversación no encontrada");
+  if (conversation.status !== "human") {
+    throw new ManualReplyError(409, "Asigna la conversación a recepción antes de responder");
+  }
+  if (conversation.phone.startsWith("simulator:")) {
+    throw new ManualReplyError(409, "El simulador no puede enviar mensajes a WhatsApp");
+  }
+  if (!whatsappConfigured()) {
+    throw new ManualReplyError(503, "WhatsApp no está conectado");
+  }
+  const [lastInbound] = await db.select({ createdAt: conversationMessagesTable.createdAt })
+    .from(conversationMessagesTable)
+    .where(and(
+      eq(conversationMessagesTable.conversationId, id),
+      eq(conversationMessagesTable.direction, "inbound"),
+      sql`${conversationMessagesTable.providerMessageId} is not null`,
+    ))
+    .orderBy(desc(conversationMessagesTable.createdAt))
+    .limit(1);
+  if (!lastInbound || Date.now() - lastInbound.createdAt.getTime() >= 24 * 60 * 60 * 1000) {
+    throw new ManualReplyError(409, "La ventana de 24 horas de WhatsApp terminó; no se puede enviar texto libre");
+  }
+  const providerMessageId = await sendWhatsAppText(conversation.phone, body);
+  if (!providerMessageId) throw new ManualReplyError(503, "WhatsApp no confirmó el envío");
+  const [sent] = await db.insert(conversationMessagesTable).values({
+    conversationId: id, providerMessageId, direction: "outbound", body, status: "sent",
+  }).returning();
+  await updateConversation(id, { lastMessage: body, lastMessageAt: sent.createdAt });
+  return {
+    id: sent.id, direction: sent.direction, body: sent.body,
+    status: sent.status, createdAt: sent.createdAt,
+  };
 }

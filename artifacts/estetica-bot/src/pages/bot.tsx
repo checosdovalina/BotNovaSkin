@@ -1,9 +1,12 @@
-import { ArrowUpRight, Check, CheckCheck, Clipboard, Cloud, Code2, ExternalLink, FileKey2, Flag, Globe2, Info, Link2, MessageCircle, RefreshCw, RotateCcw, Send, ShieldAlert, ShieldCheck, TestTube2, Wifi } from 'lucide-react';
+import { ArrowUpRight, Check, CheckCheck, Clipboard, Cloud, Code2, ExternalLink, FileKey2, Flag, Globe2, Info, Link2, LogOut, MessageCircle, RefreshCw, RotateCcw, Send, ShieldAlert, ShieldCheck, TestTube2, Wifi } from 'lucide-react';
+import { SignOutButton } from '@clerk/react';
 import { useRef, useState, type ReactNode } from 'react';
-import { getGetBotStatusQueryKey, getHealthCheckQueryKey, getListFaqsQueryKey, useGetBotStatus, useHealthCheck, useListFaqs, useSimulateBot } from '@workspace/api-client-react';
+import { useQueryClient } from '@tanstack/react-query';
+import { getGetBotStatusQueryKey, getHealthCheckQueryKey, getListBotConversationsQueryKey, getListFaqsQueryKey, useGetBotStatus, useHealthCheck, useListFaqs, useSimulateBot } from '@workspace/api-client-react';
 import { AppShell } from '@/components/shell';
 import { Button, ErrorState, PageHeader, inputClass } from '@/components/common';
 import { useToast } from '@/hooks/use-toast';
+import { BotInbox } from './bot-inbox';
 
 type Message = { from: 'bot' | 'client'; text: string };
 const initialMessages: Message[] = [{ from: 'bot', text: 'Escribe “hola” para iniciar una conversación nueva con el motor real del bot.' }];
@@ -38,7 +41,8 @@ function CopyField({ label, value, onCopy, secondary = false }: { label: string;
 }
 
 export default function Bot() {
-  const status = useGetBotStatus({ query: { queryKey: getGetBotStatusQueryKey() } });
+  const queryClient = useQueryClient();
+  const status = useGetBotStatus({ query: { queryKey: getGetBotStatusQueryKey(), refetchInterval: 15000 } });
   const health = useHealthCheck({ query: { queryKey: getHealthCheckQueryKey() } });
   const faqs = useListFaqs(undefined, { query: { queryKey: getListFaqsQueryKey(undefined) } });
   const simulate = useSimulateBot();
@@ -87,7 +91,8 @@ export default function Bot() {
     setDraft('');
     try {
       const response = await simulate.mutateAsync({ data: { message: value, sessionId: sessionId.current } });
-      if (response.reply) setMessages((current) => [...current, { from: 'bot', text: response.reply }]);
+      setMessages((current) => [...current, { from: 'bot', text: response.reply }]);
+      if (response.handoff) void queryClient.invalidateQueries({ queryKey: getListBotConversationsQueryKey() });
     } catch {
       setMessages((current) => [...current, { from: 'bot', text: 'No pude procesar la prueba. Revisa que la API y la base de datos estén disponibles.' }]);
     }
@@ -104,7 +109,9 @@ export default function Bot() {
   };
 
   return <AppShell>
-    <PageHeader eyebrow="Canal de atención · Meta Cloud API" title="Conexión WhatsApp" description="Convierte la configuración manual en un recorrido claro: prepara Meta, publica la app, verifica el webhook y prueba la primera conversación." action={<Button variant="secondary" onClick={() => void refreshAll()} disabled={status.isFetching || health.isFetching} data-testid="button-refresh-bot"><RefreshCw size={15} className={status.isFetching ? 'animate-spin' : ''} />Actualizar estado</Button>} />
+    <PageHeader eyebrow="Canal de atención · Meta Cloud API" title="Conexión WhatsApp" description="Acompaña cada conversación sin perder el contexto. La configuración y el simulador siguen disponibles más abajo." action={<div className="flex flex-wrap gap-2"><Button variant="secondary" onClick={() => void refreshAll()} disabled={status.isFetching || health.isFetching} data-testid="button-refresh-bot"><RefreshCw size={15} className={status.isFetching ? 'animate-spin' : ''} />Actualizar estado</Button><SignOutButton redirectUrl={`${import.meta.env.BASE_URL}bot`}><Button variant="secondary"><LogOut size={15} />Cerrar sesión</Button></SignOutButton></div>} />
+
+    <BotInbox connected={Boolean(bot?.connected)} connectionLoading={status.isLoading} connectionError={status.isError} />
 
     <section className="relative isolate overflow-hidden rounded-[26px] bg-primary px-5 py-6 text-primary-foreground shadow-[0_18px_40px_hsl(166_24%_20%/.12)] sm:px-7 sm:py-7">
       <div className="pointer-events-none absolute -right-16 -top-24 h-64 w-64 rounded-full border border-primary-foreground/10" /><div className="pointer-events-none absolute -right-2 -top-10 h-40 w-40 rounded-full border border-primary-foreground/10" />

@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
-import { useQueryClient } from '@tanstack/react-query';
-import { MessageCircle, RefreshCw, Send, ShieldCheck } from 'lucide-react';
+import { SignOutButton } from '@clerk/react';
+import { MessageCircle, RefreshCw, Send } from 'lucide-react';
 import {
   getListBotConversationMessagesQueryKey,
   getListBotConversationsQueryKey,
@@ -26,35 +26,28 @@ function errorMessage(error: unknown) {
 }
 
 export function ReceptionInbox() {
-  const queryClient = useQueryClient();
   const { toast } = useToast();
-  const [password, setPassword] = useState('');
-  const [accessInput, setAccessInput] = useState('');
   const [selectedId, setSelectedId] = useState<number | null>(null);
   const [draft, setDraft] = useState('');
   const [filter, setFilter] = useState<'human' | 'all' | 'bot' | 'closed'>('human');
   const knownHandoffs = useRef<Set<number> | null>(null);
-  const headers = { Authorization: `Bearer ${password}` };
   const handoffs = useListBotConversations(undefined, {
-    request: { headers },
     query: {
       queryKey: getListBotConversationsQueryKey(),
-      enabled: Boolean(password),
       retry: false,
       refetchInterval: 15000,
     },
   });
   const messages = useListBotConversationMessages(selectedId ?? 0, {
-    request: { headers },
     query: {
       queryKey: getListBotConversationMessagesQueryKey(selectedId ?? 0),
-      enabled: Boolean(password && selectedId),
+      enabled: Boolean(selectedId),
       retry: false,
       refetchInterval: 5000,
     },
   });
-  const send = useSendBotConversationMessage({ request: { headers } });
-  const update = useUpdateBotConversation({ request: { headers } });
+  const send = useSendBotConversationMessage();
+  const update = useUpdateBotConversation();
   const pending = handoffs.data?.filter((conversation) => conversation.status === 'human') ?? [];
   const filtered = (handoffs.data ?? []).filter((conversation) => filter === 'all' || conversation.status === filter);
   const selected = handoffs.data?.find((conversation) => conversation.id === selectedId);
@@ -65,21 +58,20 @@ export function ReceptionInbox() {
   const simulator = selected?.phone.startsWith('simulator:');
 
   useEffect(() => {
-    if (!password || !handoffs.data) return;
+    if (!handoffs.data) return;
     const current = new Set(pending.map((conversation) => conversation.id));
     if (knownHandoffs.current) {
       const added = pending.filter((conversation) => !knownHandoffs.current?.has(conversation.id));
       if (added.length) toast({ title: `${added.length} nueva${added.length === 1 ? '' : 's'} solicitud${added.length === 1 ? '' : 'es'} para recepción`, description: 'Abre la bandeja para atenderla.' });
     }
     knownHandoffs.current = current;
-  }, [password, handoffs.data, toast]);
+  }, [handoffs.data, toast]);
 
   useEffect(() => {
-    if (!password) return;
     const original = document.title;
     document.title = pending.length ? `(${pending.length}) ${original}` : original;
     return () => { document.title = original; };
-  }, [password, pending.length]);
+  }, [pending.length]);
 
   const refresh = async () => {
     await Promise.all([handoffs.refetch(), selectedId ? messages.refetch() : Promise.resolve()]);
@@ -88,7 +80,7 @@ export function ReceptionInbox() {
     const text = draft.trim();
     if (!selectedId || !text || send.isPending) return;
     try {
-      await send.mutateAsync({ id: selectedId, data: { message: text } });
+       await send.mutateAsync({ id: selectedId, data: { body: text } });
       setDraft('');
       await refresh();
       toast({ title: 'WhatsApp aceptó el mensaje' });
@@ -106,44 +98,23 @@ export function ReceptionInbox() {
       toast({ title: 'No se pudo cerrar', description: errorMessage(error), variant: 'destructive' });
     }
   };
-  const signOut = () => {
-    setPassword('');
-    setAccessInput('');
-    setSelectedId(null);
-    setDraft('');
-    knownHandoffs.current = null;
-    queryClient.removeQueries({ queryKey: getListBotConversationsQueryKey() });
-    queryClient.removeQueries({
-      predicate: (query) => typeof query.queryKey[0] === 'string'
-        && /^\/api\/bot\/conversations\/\d+\/messages$/.test(query.queryKey[0]),
-    });
-  };
-
   return <section className="mt-6 surface rounded-[22px] p-5 sm:p-6">
     <div className="flex flex-wrap items-start justify-between gap-3">
       <div className="flex items-start gap-3">
         <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-accent/35 text-[hsl(32_44%_30%)]"><MessageCircle size={18} /></span>
         <div>
           <p className="text-[10px] font-bold uppercase tracking-[.16em] text-primary">Atención humana</p>
-          <h2 className="mt-1 text-[17px] font-semibold">Conversaciones del bot y recepción {password && pending.length > 0 && <span className="ml-1 rounded-full bg-primary px-2 py-0.5 text-xs text-primary-foreground">{pending.length} pendientes</span>}</h2>
+           <h2 className="mt-1 text-[17px] font-semibold">Conversaciones del bot y recepción {pending.length > 0 && <span className="ml-1 rounded-full bg-primary px-2 py-0.5 text-xs text-primary-foreground">{pending.length} pendientes</span>}</h2>
           <p className="mt-1 text-xs text-muted-foreground">Consulta el historial; responde en el mismo chat cuando el cliente pida atención humana. Las solicitudes nuevas se notifican mientras esta página está abierta.</p>
         </div>
       </div>
-      {password && <div className="flex gap-2">
+       <div className="flex gap-2">
         <Button variant="secondary" className="h-9 px-3 text-xs" onClick={() => void refresh()} disabled={handoffs.isFetching}><RefreshCw size={14} />Actualizar</Button>
-        <Button variant="ghost" className="h-9 px-3 text-xs" onClick={signOut}>Cerrar acceso</Button>
-      </div>}
+         <SignOutButton redirectUrl={`${import.meta.env.BASE_URL}conversations`}><Button variant="ghost" className="h-9 px-3 text-xs">Cerrar sesión</Button></SignOutButton>
+       </div>
     </div>
 
-    {!password ? <form className="mt-5 max-w-md space-y-3 rounded-xl border border-border p-4" onSubmit={(event) => {
-      event.preventDefault();
-      if (accessInput.trim()) setPassword(accessInput);
-      setAccessInput('');
-    }}>
-      <label htmlFor="reception-password" className="flex items-center gap-2 text-sm font-semibold"><ShieldCheck size={16} />Clave de recepción</label>
-      <p className="text-xs text-muted-foreground">Esta sección contiene mensajes de clientes. La clave no se guarda en el navegador y se solicita de nuevo al recargar.</p>
-      <div className="flex gap-2"><input id="reception-password" type="password" autoComplete="off" required value={accessInput} onChange={(event) => setAccessInput(event.target.value)} className={`${inputClass} min-w-0 flex-1`} placeholder="Introduce la clave" /><Button type="submit">Abrir bandeja</Button></div>
-    </form> : <div className="mt-5">
+    <div className="mt-5">
       {handoffs.isError ? <ErrorState onRetry={() => void handoffs.refetch()} message={errorMessage(handoffs.error)} /> : handoffs.isLoading ? <p className="text-sm text-muted-foreground">Cargando conversaciones…</p> : <div>
         <div className="mb-4 flex flex-wrap gap-2" role="group" aria-label="Filtrar conversaciones">
           {([['human', `Recepción (${pending.length})`], ['all', 'Todas'], ['bot', 'Bot'], ['closed', 'Atendidas']] as const).map(([value, label]) => <Button key={value} variant={filter === value ? 'secondary' : 'ghost'} className="h-8 px-3 text-xs" onClick={() => { setFilter(value); setSelectedId(null); }}>{label}</Button>)}
@@ -178,6 +149,6 @@ export function ReceptionInbox() {
         </div>
       </div>}
       </div>}
-    </div>}
+    </div>
   </section>;
 }

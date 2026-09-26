@@ -2,3 +2,4 @@
 - [VPS AlmaLinux compartida](vps-deployment.md) — esta VPS ya aloja Nginx y PostgreSQL; desplegar BotNovaSkin con servicio, puerto y bloque Nginx aislados.
 - [Coincidencia de FAQs](faq-matching.md) — las preguntas genéricas se repiten entre tratamientos; usar el tratamiento para desambiguar y mantener la derivación clínica por encima de las FAQs.
 - [IA fundamentada para el bot](ai-grounding.md) — la IA solo responde con FAQs aprobadas; rechazo explícito deriva, y una falla del proveedor conserva el motor determinista.
+- [Acceso de recepción](reception-access.md) — la autenticación por sí sola no autoriza el historial: exigir correo principal verificado en lista permitida y cerrar acceso si falta configuración.
