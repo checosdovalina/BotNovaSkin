@@ -6,9 +6,7 @@
  * OpenAPI spec version: 0.1.0
  */
 
-export interface ReceptionAlternateAlert {
-  enabled: boolean;
-  available: boolean;
-  phone?: string;
-  pending?: boolean;
+export interface ReceptionAlternateAlertConfirmation {
+  /** @pattern ^[0-9]{8}$ */
+  code: string;
 }

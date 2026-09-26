@@ -9,6 +9,7 @@ export interface ReceptionAlternateAlert {
   enabled: boolean;
   available: boolean;
   phone?: string;
+  pending?: boolean;
 }
 
 export interface ReceptionAlternateAlertInput {
@@ -18,6 +19,11 @@ export interface ReceptionAlternateAlertInput {
      * @pattern ^[1-9][0-9]{7,14}$
      */
   phone: string;
+}
+
+export interface ReceptionAlternateAlertConfirmation {
+  /** @pattern ^[0-9]{8}$ */
+  code: string;
 }
 
 export interface ReceptionPushKey {

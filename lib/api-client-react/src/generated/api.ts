@@ -45,6 +45,7 @@ import type {
   ListFaqsParams,
   NotFoundResponse,
   ReceptionAlternateAlert,
+  ReceptionAlternateAlertConfirmation,
   ReceptionAlternateAlertInput,
   ReceptionPushKey,
   ReceptionPushRemoval,
@@ -1518,7 +1519,7 @@ export const getUpdateReceptionAlternateAlertUrl = () => {
 }
 
 /**
- * @summary Activar avisos genéricos por WhatsApp
+ * @summary Solicitar confirmación del número de WhatsApp
  */
 export const updateReceptionAlternateAlert = async (receptionAlternateAlertInput: ReceptionAlternateAlertInput, options?: Parameters<typeof customFetch>[1]): Promise<ReceptionAlternateAlert> => {
 
@@ -1567,7 +1568,7 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
     export type UpdateReceptionAlternateAlertMutationError = ErrorType<BadRequestResponse | void>
 
     /**
- * @summary Activar avisos genéricos por WhatsApp
+ * @summary Solicitar confirmación del número de WhatsApp
  */
 export const useUpdateReceptionAlternateAlert = <TError = ErrorType<BadRequestResponse | void>,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateReceptionAlternateAlert>>, TError,{data: BodyType<ReceptionAlternateAlertInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
@@ -1649,6 +1650,77 @@ export const useDeleteReceptionAlternateAlert = <TError = ErrorType<unknown>,
         TContext
       > => {
       return useMutation(getDeleteReceptionAlternateAlertMutationOptions(options));
+    }
+
+export const getConfirmReceptionAlternateAlertUrl = () => {
+
+
+
+
+  return `/api/bot/alternate-alert/confirm`
+}
+
+/**
+ * @summary Confirmar el número de WhatsApp para activar avisos
+ */
+export const confirmReceptionAlternateAlert = async (receptionAlternateAlertConfirmation: ReceptionAlternateAlertConfirmation, options?: Parameters<typeof customFetch>[1]): Promise<ReceptionAlternateAlert> => {
+
+  return customFetch<ReceptionAlternateAlert>(getConfirmReceptionAlternateAlertUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(receptionAlternateAlertConfirmation)
+  }
+);}
+
+
+
+
+
+export const getConfirmReceptionAlternateAlertMutationOptions = <TError = ErrorType<BadRequestResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof confirmReceptionAlternateAlert>>, TError,{data: BodyType<ReceptionAlternateAlertConfirmation>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof confirmReceptionAlternateAlert>>, TError,{data: BodyType<ReceptionAlternateAlertConfirmation>}, TContext> => {
+
+const mutationKey = ['confirmReceptionAlternateAlert'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof confirmReceptionAlternateAlert>>, {data: BodyType<ReceptionAlternateAlertConfirmation>}> = (props) => {
+          const {data} = props ?? {};
+
+          return  confirmReceptionAlternateAlert(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type ConfirmReceptionAlternateAlertMutationResult = NonNullable<Awaited<ReturnType<typeof confirmReceptionAlternateAlert>>>
+    export type ConfirmReceptionAlternateAlertMutationBody = BodyType<ReceptionAlternateAlertConfirmation>
+    export type ConfirmReceptionAlternateAlertMutationError = ErrorType<BadRequestResponse>
+
+    /**
+ * @summary Confirmar el número de WhatsApp para activar avisos
+ */
+export const useConfirmReceptionAlternateAlert = <TError = ErrorType<BadRequestResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof confirmReceptionAlternateAlert>>, TError,{data: BodyType<ReceptionAlternateAlertConfirmation>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof confirmReceptionAlternateAlert>>,
+        TError,
+        {data: BodyType<ReceptionAlternateAlertConfirmation>},
+        TContext
+      > => {
+      return useMutation(getConfirmReceptionAlternateAlertMutationOptions(options));
     }
 
 export const getSimulateBotUrl = () => {

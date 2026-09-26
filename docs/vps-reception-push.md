@@ -30,7 +30,16 @@ No incluir datos de clientes en la plantilla, encabezado, pie ni botones. El par
 
 ```bash
 RECEPTION_WHATSAPP_TEMPLATE=aviso_recepcion
+RECEPTION_WHATSAPP_VERIFY_TEMPLATE=verificar_recepcion
 RECEPTION_INBOX_URL=https://tu-dominio-publico/conversations
 ```
+
+Crear y aprobar también una plantilla de **Utilidad**, idioma **es_MX**, con un parámetro en el cuerpo:
+
+```text
+Tu código para activar avisos de recepción es {{1}}. Vence en 10 minutos. Si no lo solicitaste, ignora este mensaje.
+```
+
+El nombre configurado en `RECEPTION_WHATSAPP_VERIFY_TEMPLATE` debe coincidir con el de la plantilla aprobada. La plantilla de verificación solo se envía al solicitar un código; no incluir datos de clientes. La persona de recepción introduce el código en la bandeja antes de recibir avisos. Al cambiar de número se desactiva el anterior en cuanto se acepta la solicitud de código; el nuevo no recibe avisos hasta confirmarse. Los números almacenados antes de esta versión deben confirmarse de nuevo. `SESSION_SECRET` debe seguir configurado y estable en el servidor para validar los códigos pendientes.
 
 La URL debe ser la **dirección pública real de la web**, no la de la API, terminar exactamente en `/conversations` y no contener parámetros ni credenciales. Si el sitio está publicado en Replit, usar su dominio de producción, no el dominio temporal de desarrollo. Si falta la plantilla, la URL o las credenciales de WhatsApp, el panel indica que el canal no está disponible y no permite activarlo. Reiniciar el servidor tras configurar las variables y aplicar el esquema a la base correspondiente antes de usar el canal.

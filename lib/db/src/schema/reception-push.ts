@@ -1,4 +1,4 @@
-import { pgTable, text, timestamp } from "drizzle-orm/pg-core";
+import { integer, pgTable, text, timestamp } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod/v4";
 
@@ -23,5 +23,10 @@ export type InsertReceptionPushSubscription = z.infer<typeof insertReceptionPush
 export const receptionWhatsappAlertsTable = pgTable("reception_whatsapp_alerts", {
   userId: text("user_id").primaryKey(),
   phone: text("phone").notNull(),
+  verifiedAt: timestamp("verified_at", { withTimezone: true }),
+  codeHash: text("code_hash"),
+  codeExpiresAt: timestamp("code_expires_at", { withTimezone: true }),
+  codeSentAt: timestamp("code_sent_at", { withTimezone: true }),
+  attempts: integer("attempts").notNull().default(0),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });

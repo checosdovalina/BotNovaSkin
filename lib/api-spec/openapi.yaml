@@ -372,7 +372,7 @@ paths:
     put:
       operationId: updateReceptionAlternateAlert
       tags: [bot]
-      summary: Activar avisos genéricos por WhatsApp
+      summary: Solicitar confirmación del número de WhatsApp
       requestBody:
         required: true
         content:
@@ -381,7 +381,7 @@ paths:
               $ref: "#/components/schemas/ReceptionAlternateAlertInput"
       responses:
         "200":
-          description: Avisos activados
+          description: Código enviado; avisos pendientes de confirmación
           content:
             application/json:
               schema:
@@ -397,6 +397,26 @@ paths:
       responses:
         "204":
           description: Avisos desactivados
+  /bot/alternate-alert/confirm:
+    post:
+      operationId: confirmReceptionAlternateAlert
+      tags: [bot]
+      summary: Confirmar el número de WhatsApp para activar avisos
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ReceptionAlternateAlertConfirmation"
+      responses:
+        "200":
+          description: Avisos activados
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ReceptionAlternateAlert"
+        "400":
+          $ref: "#/components/responses/BadRequest"
   /bot/simulate:
     post:
       operationId: simulateBot
@@ -517,11 +537,17 @@ components:
         enabled: { type: boolean }
         available: { type: boolean }
         phone: { type: string }
+        pending: { type: boolean }
     ReceptionAlternateAlertInput:
       type: object
       required: [phone]
       properties:
         phone: { type: string, pattern: '^[1-9][0-9]{7,14}$', minLength: 8, maxLength: 15 }
+    ReceptionAlternateAlertConfirmation:
+      type: object
+      required: [code]
+      properties:
+        code: { type: string, pattern: '^[0-9]{8}$' }
     ReceptionPushKey:
       type: object
       required: [publicKey]

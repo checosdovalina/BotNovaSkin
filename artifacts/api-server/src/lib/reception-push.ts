@@ -1,5 +1,5 @@
 import { db, receptionPushKeysTable, receptionPushSubscriptionsTable, receptionWhatsappAlertsTable } from "@workspace/db";
-import { eq } from "drizzle-orm";
+import { eq, isNotNull } from "drizzle-orm";
 import webpush from "web-push";
 import { logger } from "./logger";
 import { clerkClient } from "@clerk/express";
@@ -17,7 +17,9 @@ function receptionInboxUrl() {
 }
 
 export function alternateAlertsAvailable() {
-  return whatsappConfigured() && Boolean(process.env.RECEPTION_WHATSAPP_TEMPLATE) && Boolean(receptionInboxUrl());
+  return whatsappConfigured() && Boolean(process.env.RECEPTION_WHATSAPP_TEMPLATE) &&
+    Boolean(process.env.RECEPTION_WHATSAPP_VERIFY_TEMPLATE) && Boolean(process.env.SESSION_SECRET) &&
+    Boolean(receptionInboxUrl());
 }
 
 // The same key pair must survive restarts and be shared across server instances.
@@ -64,7 +66,7 @@ export async function notifyReceptionOfHandoff() {
   try {
     const [subscriptions, alternateRecipients] = await Promise.all([
       db.select().from(receptionPushSubscriptionsTable),
-      alternateAlertsAvailable() ? db.select().from(receptionWhatsappAlertsTable) :
+      alternateAlertsAvailable() ? db.select().from(receptionWhatsappAlertsTable).where(isNotNull(receptionWhatsappAlertsTable.verifiedAt)) :
         Promise.resolve([] as (typeof receptionWhatsappAlertsTable.$inferSelect)[]),
     ]);
     if (!subscriptions.length && !alternateRecipients.length) return;

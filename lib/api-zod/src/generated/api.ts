@@ -399,12 +399,13 @@ export const UnsubscribeReceptionPushResponse = zod.void()
 export const GetReceptionAlternateAlertResponse = zod.object({
   "enabled": zod.boolean(),
   "available": zod.boolean(),
-  "phone": zod.string().optional()
+  "phone": zod.string().optional(),
+  "pending": zod.boolean().optional()
 })
 
 
 /**
- * @summary Activar avisos genéricos por WhatsApp
+ * @summary Solicitar confirmación del número de WhatsApp
  */
 export const updateReceptionAlternateAlertBodyPhoneMin = 8;
 export const updateReceptionAlternateAlertBodyPhoneMax = 15;
@@ -420,7 +421,8 @@ export const UpdateReceptionAlternateAlertBody = zod.object({
 export const UpdateReceptionAlternateAlertResponse = zod.object({
   "enabled": zod.boolean(),
   "available": zod.boolean(),
-  "phone": zod.string().optional()
+  "phone": zod.string().optional(),
+  "pending": zod.boolean().optional()
 })
 
 
@@ -428,6 +430,24 @@ export const UpdateReceptionAlternateAlertResponse = zod.object({
  * @summary Desactivar avisos por WhatsApp
  */
 export const DeleteReceptionAlternateAlertResponse = zod.void()
+
+
+/**
+ * @summary Confirmar el número de WhatsApp para activar avisos
+ */
+export const confirmReceptionAlternateAlertBodyCodeRegExp = new RegExp('^[0-9]{8}$');
+
+
+export const ConfirmReceptionAlternateAlertBody = zod.object({
+  "code": zod.string().regex(confirmReceptionAlternateAlertBodyCodeRegExp)
+})
+
+export const ConfirmReceptionAlternateAlertResponse = zod.object({
+  "enabled": zod.boolean(),
+  "available": zod.boolean(),
+  "phone": zod.string().optional(),
+  "pending": zod.boolean().optional()
+})
 
 
 /**

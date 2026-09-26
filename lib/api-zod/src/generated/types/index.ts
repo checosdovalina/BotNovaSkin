@@ -34,6 +34,7 @@ export * from './listBotConversationsParams';
 export * from './listFaqsParams';
 export * from './notFoundResponse';
 export * from './receptionAlternateAlert';
+export * from './receptionAlternateAlertConfirmation';
 export * from './receptionAlternateAlertInput';
 export * from './receptionPushKey';
 export * from './receptionPushRemoval';
