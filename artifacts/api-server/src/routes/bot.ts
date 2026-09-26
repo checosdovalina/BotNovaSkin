@@ -1,6 +1,6 @@
 import { Router, type IRouter } from "express";
 import { getAuth } from "@clerk/express";
-import { db, receptionPushSubscriptionsTable } from "@workspace/db";
+import { db, receptionPushSubscriptionsTable, receptionWhatsappAlertsTable } from "@workspace/db";
 import { and, eq } from "drizzle-orm";
 import {
   GetBotStatusResponse,
@@ -19,6 +19,9 @@ import {
   GetReceptionPushKeyResponse,
   SubscribeReceptionPushBody,
   UnsubscribeReceptionPushBody,
+  GetReceptionAlternateAlertResponse,
+  UpdateReceptionAlternateAlertBody,
+  UpdateReceptionAlternateAlertResponse,
 } from "@workspace/api-zod";
 import {
   listConversations,
@@ -31,10 +34,41 @@ import {
 } from "../lib/conversation-engine";
 import { whatsappConfigured } from "../lib/whatsapp";
 import { requireReception } from "../middlewares/requireReception";
-import { getPushKeys, validPushEndpoint } from "../lib/reception-push";
+import { alternateAlertsAvailable, getPushKeys, validPushEndpoint } from "../lib/reception-push";
 
 const router: IRouter = Router();
 router.use("/bot", requireReception);
+
+router.get("/bot/alternate-alert", async (req, res): Promise<void> => {
+  const [entry] = await db.select().from(receptionWhatsappAlertsTable)
+    .where(eq(receptionWhatsappAlertsTable.userId, getAuth(req).userId!));
+  res.json(GetReceptionAlternateAlertResponse.parse({
+    enabled: Boolean(entry), available: alternateAlertsAvailable(), ...(entry ? { phone: entry.phone } : {}),
+  }));
+});
+
+router.put("/bot/alternate-alert", async (req, res): Promise<void> => {
+  const parsed = UpdateReceptionAlternateAlertBody.safeParse(req.body);
+  if (!parsed.success) {
+    res.status(400).json({ error: "Introduce el teléfono con código de país, sin espacios ni signo +." });
+    return;
+  }
+  if (!alternateAlertsAvailable()) {
+    res.status(503).json({ error: "Los avisos por WhatsApp aún no están configurados." });
+    return;
+  }
+  const userId = getAuth(req).userId!;
+  await db.insert(receptionWhatsappAlertsTable).values({ userId, phone: parsed.data.phone })
+    .onConflictDoUpdate({ target: receptionWhatsappAlertsTable.userId, set: { phone: parsed.data.phone } });
+  res.json(UpdateReceptionAlternateAlertResponse.parse({
+    enabled: true, available: true, phone: parsed.data.phone,
+  }));
+});
+
+router.delete("/bot/alternate-alert", async (req, res): Promise<void> => {
+  await db.delete(receptionWhatsappAlertsTable).where(eq(receptionWhatsappAlertsTable.userId, getAuth(req).userId!));
+  res.sendStatus(204);
+});
 
 router.get("/bot/push", async (_req, res): Promise<void> => {
   const keys = await getPushKeys();

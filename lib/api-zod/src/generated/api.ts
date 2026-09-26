@@ -394,6 +394,43 @@ export const UnsubscribeReceptionPushResponse = zod.void()
 
 
 /**
+ * @summary Consultar avisos alternativos de recepción
+ */
+export const GetReceptionAlternateAlertResponse = zod.object({
+  "enabled": zod.boolean(),
+  "available": zod.boolean(),
+  "phone": zod.string().optional()
+})
+
+
+/**
+ * @summary Activar avisos genéricos por WhatsApp
+ */
+export const updateReceptionAlternateAlertBodyPhoneMin = 8;
+export const updateReceptionAlternateAlertBodyPhoneMax = 15;
+
+
+export const updateReceptionAlternateAlertBodyPhoneRegExp = new RegExp('^[1-9][0-9]{7,14}$');
+
+
+export const UpdateReceptionAlternateAlertBody = zod.object({
+  "phone": zod.string().min(updateReceptionAlternateAlertBodyPhoneMin).max(updateReceptionAlternateAlertBodyPhoneMax).regex(updateReceptionAlternateAlertBodyPhoneRegExp)
+})
+
+export const UpdateReceptionAlternateAlertResponse = zod.object({
+  "enabled": zod.boolean(),
+  "available": zod.boolean(),
+  "phone": zod.string().optional()
+})
+
+
+/**
+ * @summary Desactivar avisos por WhatsApp
+ */
+export const DeleteReceptionAlternateAlertResponse = zod.void()
+
+
+/**
  * @summary Probar el motor de conversación
  */
 export const simulateBotBodyMessageMax = 2000;

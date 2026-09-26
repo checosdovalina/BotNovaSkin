@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Bell, BellOff } from 'lucide-react';
-import { getGetReceptionPushKeyQueryKey, useGetReceptionPushKey, useSubscribeReceptionPush, useUnsubscribeReceptionPush } from '@workspace/api-client-react';
+import { useQueryClient } from '@tanstack/react-query';
+import { getGetReceptionPushKeyQueryKey, getGetReceptionAlternateAlertQueryKey, useGetReceptionAlternateAlert, useUpdateReceptionAlternateAlert, useDeleteReceptionAlternateAlert, useGetReceptionPushKey, useSubscribeReceptionPush, useUnsubscribeReceptionPush } from '@workspace/api-client-react';
 import { Button } from '@/components/common';
 
 const supported = typeof window !== 'undefined' && window.isSecureContext &&
@@ -10,6 +11,68 @@ function decodeBase64Url(input: string): Uint8Array<ArrayBuffer> {
   const padding = '='.repeat((4 - input.length % 4) % 4);
   const bytes = atob((input + padding).replace(/-/g, '+').replace(/_/g, '/'));
   return Uint8Array.from(bytes, (char) => char.charCodeAt(0));
+}
+
+function WhatsappAlertSettings() {
+  const client = useQueryClient();
+  const alert = useGetReceptionAlternateAlert();
+  const update = useUpdateReceptionAlternateAlert();
+  const remove = useDeleteReceptionAlternateAlert();
+  const [phone, setPhone] = useState('');
+  const [error, setError] = useState('');
+  const [editing, setEditing] = useState(false);
+  const busy = update.isPending || remove.isPending;
+
+  useEffect(() => {
+    if (alert.data?.phone && !editing) setPhone(alert.data.phone);
+  }, [alert.data?.phone, editing]);
+
+  const save = async () => {
+    setError('');
+    if (!/^[1-9][0-9]{7,14}$/.test(phone)) {
+      setError('Introduce entre 8 y 15 dígitos con código de país, sin espacios ni signo +.');
+      return;
+    }
+    try {
+      const result = await update.mutateAsync({ data: { phone } });
+      client.setQueryData(getGetReceptionAlternateAlertQueryKey(), result);
+      setEditing(false);
+    } catch {
+      setError('No se pudieron activar los avisos por WhatsApp.');
+    }
+  };
+  const disable = async () => {
+    setError('');
+    try {
+      await remove.mutateAsync();
+      client.setQueryData(getGetReceptionAlternateAlertQueryKey(), { enabled: false, available: alert.data?.available ?? false });
+      setPhone('');
+      setEditing(false);
+    } catch {
+      setError('No se pudieron desactivar los avisos por WhatsApp.');
+    }
+  };
+
+  return <div className="mt-4 border-t border-border pt-4">
+    <p className="text-sm font-semibold">Canal alternativo: WhatsApp</p>
+    <p className="mt-1 text-xs text-muted-foreground">Opcional e independiente del navegador. Recibirás solo un aviso genérico con enlace a la bandeja protegida, sin nombres, teléfonos ni mensajes de clientes. Pueden aplicar las condiciones de entrega de WhatsApp.</p>
+    {alert.isLoading ? <p className="mt-2 text-xs text-muted-foreground">Consultando configuración…</p> :
+      alert.isError ? <p role="alert" className="mt-2 text-xs text-destructive">No se pudo consultar este canal. Vuelve a cargar la página.</p> :
+      <>
+        {!alert.data?.available && <p className="mt-2 text-xs text-muted-foreground">Este canal aún no está configurado por el administrador.</p>}
+        {alert.data?.enabled && !editing && <p className="mt-2 text-xs">Activado para {alert.data.phone}. Puedes desactivarlo cuando quieras.</p>}
+        {alert.data?.available && (!alert.data.enabled || editing) && <div className="mt-3 flex flex-wrap items-center gap-2">
+          <label htmlFor="reception-alert-phone" className="text-xs">Tu WhatsApp (con código de país)</label>
+          <input id="reception-alert-phone" type="tel" inputMode="numeric" autoComplete="tel" value={phone} onChange={(event) => setPhone(event.target.value)} placeholder="5215512345678" maxLength={15} className="h-9 rounded-md border border-border bg-background px-3 text-sm" />
+          <Button variant="secondary" className="h-9 text-xs" disabled={busy} onClick={() => void save()}>{alert.data.enabled ? 'Guardar número' : 'Activar WhatsApp'}</Button>
+        </div>}
+        {alert.data?.enabled && <div className="mt-3 flex flex-wrap gap-2">
+          {alert.data.available && !editing && <Button variant="secondary" className="h-9 text-xs" disabled={busy} onClick={() => setEditing(true)}>Cambiar número</Button>}
+          <Button variant="secondary" className="h-9 text-xs" disabled={busy} onClick={() => void disable()}>Desactivar WhatsApp</Button>
+        </div>}
+      </>}
+    {error && <p role="alert" className="mt-2 text-xs text-destructive">{error}</p>}
+  </div>;
 }
 
 export function ReceptionPushSettings() {
@@ -86,5 +149,6 @@ export function ReceptionPushSettings() {
       </Button>)}
     {error && <p role="alert" className="mt-2 text-xs text-destructive">{error}</p>}
     <p className="mt-2 text-xs text-muted-foreground">En la app: contador y aviso mientras esta bandeja está abierta. En segundo plano: notificación del navegador si la activas aquí.</p>
+    <WhatsappAlertSettings />
   </div>;
 }

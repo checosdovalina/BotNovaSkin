@@ -5,6 +5,21 @@
  * API para el panel del bot de citas de una estética
  * OpenAPI spec version: 0.1.0
  */
+export interface ReceptionAlternateAlert {
+  enabled: boolean;
+  available: boolean;
+  phone?: string;
+}
+
+export interface ReceptionAlternateAlertInput {
+  /**
+     * @minLength 8
+     * @maxLength 15
+     * @pattern ^[1-9][0-9]{7,14}$
+     */
+  phone: string;
+}
+
 export interface ReceptionPushKey {
   publicKey: string;
 }

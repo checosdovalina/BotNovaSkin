@@ -44,6 +44,8 @@ import type {
   ListBotConversationsParams,
   ListFaqsParams,
   NotFoundResponse,
+  ReceptionAlternateAlert,
+  ReceptionAlternateAlertInput,
   ReceptionPushKey,
   ReceptionPushRemoval,
   ReceptionPushSubscription,
@@ -1428,6 +1430,225 @@ export const useUnsubscribeReceptionPush = <TError = ErrorType<BadRequestRespons
         TContext
       > => {
       return useMutation(getUnsubscribeReceptionPushMutationOptions(options));
+    }
+
+export const getGetReceptionAlternateAlertUrl = () => {
+
+
+
+
+  return `/api/bot/alternate-alert`
+}
+
+/**
+ * @summary Consultar avisos alternativos de recepción
+ */
+export const getReceptionAlternateAlert = async ( options?: Parameters<typeof customFetch>[1]): Promise<ReceptionAlternateAlert> => {
+
+  return customFetch<ReceptionAlternateAlert>(getGetReceptionAlternateAlertUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetReceptionAlternateAlertQueryKey = () => {
+    return [
+    `/api/bot/alternate-alert`
+    ] as const;
+    }
+
+
+export const getGetReceptionAlternateAlertQueryOptions = <TData = Awaited<ReturnType<typeof getReceptionAlternateAlert>>, TError = ErrorType<unknown>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getReceptionAlternateAlert>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetReceptionAlternateAlertQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getReceptionAlternateAlert>>> = ({ signal }) => getReceptionAlternateAlert({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getReceptionAlternateAlert>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetReceptionAlternateAlertQueryResult = NonNullable<Awaited<ReturnType<typeof getReceptionAlternateAlert>>>
+export type GetReceptionAlternateAlertQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary Consultar avisos alternativos de recepción
+ */
+
+export function useGetReceptionAlternateAlert<TData = Awaited<ReturnType<typeof getReceptionAlternateAlert>>, TError = ErrorType<unknown>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getReceptionAlternateAlert>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetReceptionAlternateAlertQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getUpdateReceptionAlternateAlertUrl = () => {
+
+
+
+
+  return `/api/bot/alternate-alert`
+}
+
+/**
+ * @summary Activar avisos genéricos por WhatsApp
+ */
+export const updateReceptionAlternateAlert = async (receptionAlternateAlertInput: ReceptionAlternateAlertInput, options?: Parameters<typeof customFetch>[1]): Promise<ReceptionAlternateAlert> => {
+
+  return customFetch<ReceptionAlternateAlert>(getUpdateReceptionAlternateAlertUrl(),
+  {
+    ...options,
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(receptionAlternateAlertInput)
+  }
+);}
+
+
+
+
+
+export const getUpdateReceptionAlternateAlertMutationOptions = <TError = ErrorType<BadRequestResponse | void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateReceptionAlternateAlert>>, TError,{data: BodyType<ReceptionAlternateAlertInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof updateReceptionAlternateAlert>>, TError,{data: BodyType<ReceptionAlternateAlertInput>}, TContext> => {
+
+const mutationKey = ['updateReceptionAlternateAlert'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof updateReceptionAlternateAlert>>, {data: BodyType<ReceptionAlternateAlertInput>}> = (props) => {
+          const {data} = props ?? {};
+
+          return  updateReceptionAlternateAlert(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type UpdateReceptionAlternateAlertMutationResult = NonNullable<Awaited<ReturnType<typeof updateReceptionAlternateAlert>>>
+    export type UpdateReceptionAlternateAlertMutationBody = BodyType<ReceptionAlternateAlertInput>
+    export type UpdateReceptionAlternateAlertMutationError = ErrorType<BadRequestResponse | void>
+
+    /**
+ * @summary Activar avisos genéricos por WhatsApp
+ */
+export const useUpdateReceptionAlternateAlert = <TError = ErrorType<BadRequestResponse | void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateReceptionAlternateAlert>>, TError,{data: BodyType<ReceptionAlternateAlertInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof updateReceptionAlternateAlert>>,
+        TError,
+        {data: BodyType<ReceptionAlternateAlertInput>},
+        TContext
+      > => {
+      return useMutation(getUpdateReceptionAlternateAlertMutationOptions(options));
+    }
+
+export const getDeleteReceptionAlternateAlertUrl = () => {
+
+
+
+
+  return `/api/bot/alternate-alert`
+}
+
+/**
+ * @summary Desactivar avisos por WhatsApp
+ */
+export const deleteReceptionAlternateAlert = async ( options?: Parameters<typeof customFetch>[1]): Promise<void> => {
+
+  return customFetch<void>(getDeleteReceptionAlternateAlertUrl(),
+  {
+    ...options,
+    method: 'DELETE'
+
+
+  }
+);}
+
+
+
+
+
+export const getDeleteReceptionAlternateAlertMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteReceptionAlternateAlert>>, TError,void, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof deleteReceptionAlternateAlert>>, TError,void, TContext> => {
+
+const mutationKey = ['deleteReceptionAlternateAlert'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof deleteReceptionAlternateAlert>>, void> = () => {
+
+
+          return  deleteReceptionAlternateAlert(requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type DeleteReceptionAlternateAlertMutationResult = NonNullable<Awaited<ReturnType<typeof deleteReceptionAlternateAlert>>>
+
+    export type DeleteReceptionAlternateAlertMutationError = ErrorType<unknown>
+
+    /**
+ * @summary Desactivar avisos por WhatsApp
+ */
+export const useDeleteReceptionAlternateAlert = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteReceptionAlternateAlert>>, TError,void, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof deleteReceptionAlternateAlert>>,
+        TError,
+        void,
+        TContext
+      > => {
+      return useMutation(getDeleteReceptionAlternateAlertMutationOptions(options));
     }
 
 export const getSimulateBotUrl = () => {

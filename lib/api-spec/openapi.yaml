@@ -357,6 +357,46 @@ paths:
           description: Suscripción eliminada
         "400":
           $ref: "#/components/responses/BadRequest"
+  /bot/alternate-alert:
+    get:
+      operationId: getReceptionAlternateAlert
+      tags: [bot]
+      summary: Consultar avisos alternativos de recepción
+      responses:
+        "200":
+          description: Estado de los avisos por WhatsApp
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ReceptionAlternateAlert"
+    put:
+      operationId: updateReceptionAlternateAlert
+      tags: [bot]
+      summary: Activar avisos genéricos por WhatsApp
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ReceptionAlternateAlertInput"
+      responses:
+        "200":
+          description: Avisos activados
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ReceptionAlternateAlert"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "503":
+          description: Canal no configurado
+    delete:
+      operationId: deleteReceptionAlternateAlert
+      tags: [bot]
+      summary: Desactivar avisos por WhatsApp
+      responses:
+        "204":
+          description: Avisos desactivados
   /bot/simulate:
     post:
       operationId: simulateBot
@@ -470,6 +510,18 @@ paths:
           description: Canal no disponible o envío fallido
 components:
   schemas:
+    ReceptionAlternateAlert:
+      type: object
+      required: [enabled, available]
+      properties:
+        enabled: { type: boolean }
+        available: { type: boolean }
+        phone: { type: string }
+    ReceptionAlternateAlertInput:
+      type: object
+      required: [phone]
+      properties:
+        phone: { type: string, pattern: '^[1-9][0-9]{7,14}$', minLength: 8, maxLength: 15 }
     ReceptionPushKey:
       type: object
       required: [publicKey]

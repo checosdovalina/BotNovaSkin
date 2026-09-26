@@ -8,3 +8,9 @@ Una suscripción push es por dispositivo y puede sobrevivir al cierre de sesión
 **Why:** Una suscripción guardada no prueba autorización futura, y una clave efímera rompe los dispositivos suscritos. Las notificaciones del sistema son visibles en pantallas bloqueadas.
 
 **How to apply:** Al añadir canales o cambiar la autorización de recepción, mantener la comprobación antes del envío y no incluir mensajes, nombres ni teléfonos en el contenido push.
+
+Para avisos alternativos por WhatsApp, usar una plantilla aprobada en vez de texto libre: los envíos proactivos pueden ocurrir fuera de la ventana de 24 horas. La plantilla debe contener solo un aviso genérico y el enlace HTTPS a la bandeja protegida; no reutilizar plantillas de clientes.
+
+**Why:** El texto libre puede ser rechazado por Meta fuera de la ventana activa y una plantilla con contenido variable podría revelar datos en la pantalla bloqueada del destinatario.
+
+**How to apply:** Exigir la configuración explícita de la plantilla aprobada y la URL pública de la bandeja; no activar el canal si faltan. Mantener opt-in revocable por usuario y comprobar su autorización justo antes de enviar.

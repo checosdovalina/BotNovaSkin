@@ -1,8 +1,24 @@
-import { db, receptionPushKeysTable, receptionPushSubscriptionsTable } from "@workspace/db";
+import { db, receptionPushKeysTable, receptionPushSubscriptionsTable, receptionWhatsappAlertsTable } from "@workspace/db";
 import { eq } from "drizzle-orm";
 import webpush from "web-push";
 import { logger } from "./logger";
 import { clerkClient } from "@clerk/express";
+import { sendWhatsAppTemplate, whatsappConfigured } from "./whatsapp";
+
+function receptionInboxUrl() {
+  try {
+    const url = new URL(process.env.RECEPTION_INBOX_URL ?? "");
+    if (url.protocol !== "https:" || !url.hostname || url.username || url.password || url.search || url.hash ||
+      url.pathname !== "/conversations") return null;
+    return url.href;
+  } catch {
+    return null;
+  }
+}
+
+export function alternateAlertsAvailable() {
+  return whatsappConfigured() && Boolean(process.env.RECEPTION_WHATSAPP_TEMPLATE) && Boolean(receptionInboxUrl());
+}
 
 // The same key pair must survive restarts and be shared across server instances.
 export async function getPushKeys() {
@@ -46,12 +62,16 @@ function pushSubject() {
 
 export async function notifyReceptionOfHandoff() {
   try {
-    const subscriptions = await db.select().from(receptionPushSubscriptionsTable);
-    if (!subscriptions.length) return;
+    const [subscriptions, alternateRecipients] = await Promise.all([
+      db.select().from(receptionPushSubscriptionsTable),
+      alternateAlertsAvailable() ? db.select().from(receptionWhatsappAlertsTable) :
+        Promise.resolve([] as (typeof receptionWhatsappAlertsTable.$inferSelect)[]),
+    ]);
+    if (!subscriptions.length && !alternateRecipients.length) return;
     const allowed = (process.env.RECEPTION_ALLOWED_EMAILS ?? "").split(",").map((email) => email.trim().toLowerCase()).filter(Boolean);
     if (!allowed.length) return;
     const authorized = new Set<string>();
-    await Promise.all([...new Set(subscriptions.map((subscription) => subscription.userId))].map(async (userId) => {
+    await Promise.all([...new Set([...subscriptions, ...alternateRecipients].map((recipient) => recipient.userId))].map(async (userId) => {
       try {
         const user = await clerkClient.users.getUser(userId);
         const primary = user.emailAddresses.find((email) => email.id === user.primaryEmailAddressId);
@@ -62,26 +82,45 @@ export async function notifyReceptionOfHandoff() {
       }
     }));
     const recipients = subscriptions.filter((subscription) => authorized.has(subscription.userId));
-    if (!recipients.length) return;
-    const keys = await getPushKeys();
-    webpush.setVapidDetails(pushSubject(), keys.publicKey, keys.privateKey);
-    // No client identifier, message, phone number or conversation ID leaves the server.
-    const payload = JSON.stringify({ title: "Nueva solicitud para recepción", body: "Abre la bandeja protegida para atenderla." });
-    await Promise.all(recipients.map(async (subscription) => {
+    const pushDelivery = (async () => {
+      if (!recipients.length) return;
       try {
-        await webpush.sendNotification({
-          endpoint: subscription.endpoint,
-          keys: { p256dh: subscription.p256dh, auth: subscription.auth },
-        }, payload, { TTL: 3600 });
+        const keys = await getPushKeys();
+        webpush.setVapidDetails(pushSubject(), keys.publicKey, keys.privateKey);
+        // No client identifier, message, phone number or conversation ID leaves the server.
+        const payload = JSON.stringify({ title: "Nueva solicitud para recepción", body: "Abre la bandeja protegida para atenderla." });
+        await Promise.all(recipients.map(async (subscription) => {
+          try {
+            await webpush.sendNotification({
+              endpoint: subscription.endpoint,
+              keys: { p256dh: subscription.p256dh, auth: subscription.auth },
+            }, payload, { TTL: 3600, timeout: 10_000 });
+          } catch (error) {
+            const status = (error as { statusCode?: number }).statusCode;
+            if (status === 404 || status === 410) {
+              await db.delete(receptionPushSubscriptionsTable).where(eq(receptionPushSubscriptionsTable.endpoint, subscription.endpoint));
+            } else {
+              logger.warn({ status }, "Reception push delivery failed");
+            }
+          }
+        }));
       } catch (error) {
-        const status = (error as { statusCode?: number }).statusCode;
-        if (status === 404 || status === 410) {
-          await db.delete(receptionPushSubscriptionsTable).where(eq(receptionPushSubscriptionsTable.endpoint, subscription.endpoint));
-        } else {
-          logger.warn({ status }, "Reception push delivery failed");
-        }
+        logger.warn({ error }, "Reception push notification failed");
       }
-    }));
+    })();
+    const alternateDelivery = (async () => {
+      const inbox = receptionInboxUrl();
+      if (!inbox || !alternateAlertsAvailable()) return;
+      await Promise.all(alternateRecipients.filter((recipient) => authorized.has(recipient.userId)).map(async (recipient) => {
+        try {
+          // The approved template contains only a generic notice and the inbox URL; Meta requires text after {{1}}.
+          await sendWhatsAppTemplate(recipient.phone, process.env.RECEPTION_WHATSAPP_TEMPLATE!, "es_MX", [inbox]);
+        } catch (error) {
+          logger.warn({ error }, "Reception WhatsApp alert failed");
+        }
+      }));
+    })();
+    await Promise.all([pushDelivery, alternateDelivery]);
   } catch (error) {
     logger.warn({ error }, "Reception push notification failed");
   }

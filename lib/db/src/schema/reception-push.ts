@@ -18,3 +18,10 @@ export const receptionPushSubscriptionsTable = pgTable("reception_push_subscript
 
 export const insertReceptionPushSubscriptionSchema = createInsertSchema(receptionPushSubscriptionsTable).omit({ createdAt: true });
 export type InsertReceptionPushSubscription = z.infer<typeof insertReceptionPushSubscriptionSchema>;
+
+// A separate opt-in per authorized receptionist; deleting the row revokes delivery.
+export const receptionWhatsappAlertsTable = pgTable("reception_whatsapp_alerts", {
+  userId: text("user_id").primaryKey(),
+  phone: text("phone").notNull(),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+});

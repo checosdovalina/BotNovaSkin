@@ -107,12 +107,12 @@ export async function sendWhatsAppTemplate(
           language: {
             code: languageCode,
           },
-          components: [
+          components: parameters.length ? [
             {
               type: "body",
               parameters: parameters.map((text) => ({ type: "text", text })),
             },
-          ],
+          ] : undefined,
         },
       }),
       signal: AbortSignal.timeout(12_000),

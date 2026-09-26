@@ -33,6 +33,8 @@ export * from './listAppointmentsParams';
 export * from './listBotConversationsParams';
 export * from './listFaqsParams';
 export * from './notFoundResponse';
+export * from './receptionAlternateAlert';
+export * from './receptionAlternateAlertInput';
 export * from './receptionPushKey';
 export * from './receptionPushRemoval';
 export * from './receptionPushSubscription';
