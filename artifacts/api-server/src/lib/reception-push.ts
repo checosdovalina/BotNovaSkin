@@ -1,5 +1,5 @@
 import { db, receptionPushKeysTable, receptionPushSubscriptionsTable, receptionWhatsappAlertsTable } from "@workspace/db";
-import { eq, isNotNull } from "drizzle-orm";
+import { and, eq, isNotNull } from "drizzle-orm";
 import webpush from "web-push";
 import { logger } from "./logger";
 import { clerkClient } from "@clerk/express";
@@ -115,8 +115,15 @@ export async function notifyReceptionOfHandoff() {
       if (!inbox || !alternateAlertsAvailable()) return;
       await Promise.all(alternateRecipients.filter((recipient) => authorized.has(recipient.userId)).map(async (recipient) => {
         try {
+          // A recipient may have disabled alerts while Clerk authorization was in flight.
+          const [current] = await db.select().from(receptionWhatsappAlertsTable).where(and(
+            eq(receptionWhatsappAlertsTable.userId, recipient.userId),
+            eq(receptionWhatsappAlertsTable.phone, recipient.phone),
+            isNotNull(receptionWhatsappAlertsTable.verifiedAt),
+          ));
+          if (!current || !alternateAlertsAvailable()) return;
           // The approved template contains only a generic notice and the inbox URL; Meta requires text after {{1}}.
-          await sendWhatsAppTemplate(recipient.phone, process.env.RECEPTION_WHATSAPP_TEMPLATE!, "es_MX", [inbox]);
+          await sendWhatsAppTemplate(current.phone, process.env.RECEPTION_WHATSAPP_TEMPLATE!, "es_MX", [inbox]);
         } catch (error) {
           logger.warn({ error }, "Reception WhatsApp alert failed");
         }
