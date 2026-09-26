@@ -572,6 +572,24 @@ async function updateConversation(
   return updated;
 }
 
+async function handoffConversation(
+  id: number,
+  values: Partial<typeof conversationsTable.$inferInsert>,
+): Promise<Conversation | undefined> {
+  // The database chooses the winner even when requests run in different processes.
+  const [changed] = await db.update(conversationsTable)
+    .set({ ...values, status: "human", updatedAt: new Date() })
+    .where(and(eq(conversationsTable.id, id), ne(conversationsTable.status, "human")))
+    .returning();
+  if (changed) {
+    if (!changed.phone.startsWith("simulator:")) void notifyReceptionOfHandoff();
+    return changed;
+  }
+  const [current] = await db.select().from(conversationsTable)
+    .where(eq(conversationsTable.id, id));
+  return current;
+}
+
 async function transition(
   conversation: Conversation,
   state: Conversation["state"],
@@ -579,15 +597,11 @@ async function transition(
   reply: string,
   status: Conversation["status"] = conversation.status,
 ): Promise<BotReply> {
-  const updated = await updateConversation(conversation.id, {
-    state,
-    context,
-    status,
-    lastMessageAt: new Date(),
-  });
-  if (conversation.status !== "human" && updated.status === "human" && !conversation.phone.startsWith("simulator:")) {
-    void notifyReceptionOfHandoff();
-  }
+  const values = { state, context, lastMessageAt: new Date() };
+  const updated = status === "human"
+    ? await handoffConversation(conversation.id, values)
+    : await updateConversation(conversation.id, { ...values, status });
+  if (!updated) throw new Error("Conversation no longer exists");
   return {
     reply,
     handoff: updated.status === "human",
@@ -1578,8 +1592,7 @@ export async function setConversationStatus(
   id: number,
   status: "bot" | "human" | "closed",
 ) {
-  const [previous] = await db.select({ status: conversationsTable.status })
-    .from(conversationsTable).where(eq(conversationsTable.id, id));
+  if (status === "human") return handoffConversation(id, {});
   const [updated] = await db
     .update(conversationsTable)
     .set({
@@ -1590,9 +1603,6 @@ export async function setConversationStatus(
     })
     .where(eq(conversationsTable.id, id))
     .returning();
-  if (previous && previous.status !== "human" && updated?.status === "human" && !updated.phone.startsWith("simulator:")) {
-    void notifyReceptionOfHandoff();
-  }
   return updated;
 }
 
