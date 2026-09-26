@@ -248,6 +248,19 @@ function validDate(value: string): boolean {
   );
 }
 
+function bookingDateExample(): string {
+  let date = addDays(todayInMexico(), 1);
+  if (new Date(`${date}T12:00:00.000Z`).getUTCDay() === 0) {
+    date = addDays(date, 1);
+  }
+  const [year, month, day] = date.split("-");
+  return `${day}/${month}/${year}`;
+}
+
+function bookingDateInstruction(): string {
+  return `¿Qué fecha prefieres? Responde con el día, por ejemplo *lunes* (el lunes más cercano), escribe *mañana* o una fecha exacta en formato *DD/MM/AAAA*, por ejemplo *${bookingDateExample()}*. Atendemos de lunes a sábado.`;
+}
+
 function parseTime(message: string): string | undefined {
   const value = normalize(message);
   const numericChoice = Number(value);
@@ -368,7 +381,7 @@ async function appointmentServiceList(
         }`,
     ),
     "",
-    "Responde con el número o nombre del tratamiento para continuar con tu cita.",
+    "Para continuar con tu cita, responde con el número de la lista, por ejemplo *1*, o escribe el nombre del tratamiento.",
   ].join("\n");
 }
 
@@ -602,7 +615,7 @@ async function startAppointment(
         serviceName: conversation.context.serviceName,
         appointmentPurpose: "valuation",
       },
-      `Claro. Agendaremos una valoración para *${conversation.context.serviceName}*.\n\n¿Qué fecha prefieres? Escribe, por ejemplo, *lunes*, *mañana* o una fecha en formato *DD/MM/AAAA*. Atendemos de lunes a sábado.`,
+      `Claro. Agendaremos una valoración para *${conversation.context.serviceName}*.\n\n${bookingDateInstruction()}`,
       "bot",
     );
   }
@@ -771,7 +784,7 @@ async function processState(
         context.appointmentPurpose === "valuation"
           ? " para la valoración"
           : ""
-      }.\n\n¿Qué fecha prefieres? Escribe, por ejemplo, *lunes*, *mañana* o una fecha en formato *DD/MM/AAAA*. Atendemos de lunes a sábado.`,
+      }.\n\n${bookingDateInstruction()}`,
     );
   }
 
@@ -788,14 +801,14 @@ async function processState(
           conversation,
           "await_date",
           context,
-          `${faq.answer}\n\nEsta información es general y no sustituye una valoración profesional.\n\nPara continuar con la cita, escribe la fecha que prefieres, por ejemplo *lunes*, *mañana* o una fecha en formato *DD/MM/AAAA*.`,
+          `${faq.answer}\n\nEsta información es general y no sustituye una valoración profesional.\n\nPara continuar con la cita: ${bookingDateInstruction()}`,
         );
       }
       return transition(
         conversation,
         "await_date",
         context,
-        "No pude validar esa fecha. Escribe un día de lunes a sábado, *mañana* o una fecha en formato DD/MM/AAAA.",
+        `No pude validar esa fecha. ${bookingDateInstruction()}`,
       );
     }
     const times = await availableTimes(date);
@@ -804,7 +817,7 @@ async function processState(
         conversation,
         "await_date",
         context,
-        "Ese día ya no tiene horarios disponibles. Por favor elige otra fecha.",
+        `Ese día ya no tiene horarios disponibles. ${bookingDateInstruction()}`,
       );
     }
     return transition(
@@ -813,7 +826,7 @@ async function processState(
       { ...context, scheduledDate: date },
       `Horarios disponibles para ${date}:\n\n${times
         .map((time, index) => `${index + 1}. ${time}`)
-        .join("\n")}\n\nEscribe el horario, por ejemplo *10:00*.`,
+        .join("\n")}\n\nResponde con el número de una opción, por ejemplo *1*, o escribe la hora tal como aparece, por ejemplo *10:00*.`,
     );
   }
 
@@ -830,7 +843,7 @@ async function processState(
         conversation,
         "await_time",
         context,
-        "Ese horario no está disponible. Escribe uno de los horarios mostrados, por ejemplo *10:00*.",
+        "Ese horario no está disponible. Responde con el número de una opción mostrada, por ejemplo *1*, o con la hora, por ejemplo *10:00*.",
       );
     }
     return transition(
@@ -838,8 +851,8 @@ async function processState(
       "await_name",
       { ...context, scheduledTime: time },
       context.appointmentPurpose === "valuation"
-        ? "¿A nombre de quién registro la valoración?"
-        : "¿A nombre de quién registro la cita?",
+        ? "¿A nombre de quién registro la valoración? Escribe nombre y apellido, por ejemplo *Ana García*."
+        : "¿A nombre de quién registro la cita? Escribe nombre y apellido, por ejemplo *Ana García*.",
     );
   }
 
@@ -850,7 +863,7 @@ async function processState(
         conversation,
         "await_name",
         context,
-        "Escribe el nombre de la persona para registrar la cita.",
+        "Escribe nombre y apellido para registrar la cita, por ejemplo *Ana García*.",
       );
     }
     const nextContext = { ...context, clientName: name };
@@ -858,7 +871,7 @@ async function processState(
       conversation,
       "await_phone",
       nextContext,
-      "Escribe el número de WhatsApp donde deseas recibir la confirmación y los recordatorios. Incluye los 10 dígitos, por ejemplo: *8711234567*.",
+      "Para confirmar la cita, escribe los 10 dígitos de este mismo número de WhatsApp, sin espacios ni +52. Por ejemplo: *8711234567*.",
     );
   }
 
@@ -869,7 +882,7 @@ async function processState(
         conversation,
         "await_phone",
         context,
-        "No pude validar el número. Escribe los 10 dígitos de tu WhatsApp, por ejemplo: *8711234567*.",
+        "No pude validar el número. Escribe los 10 dígitos de este mismo WhatsApp, sin espacios ni +52. Por ejemplo: *8711234567*.",
       );
     }
     if (verifiedPhone !== normalizeMexicanPhone(conversation.phone)) {
@@ -877,7 +890,7 @@ async function processState(
         conversation,
         "await_phone",
         context,
-        "El número escrito no coincide con el WhatsApp desde el que estás conversando. Para confirmar que te pertenece, escribe nuevamente este mismo número de WhatsApp con 10 dígitos.",
+        "El número escrito no coincide con el WhatsApp desde el que estás conversando. Escribe los 10 dígitos de este mismo número, sin espacios ni +52.",
       );
     }
     const nextContext = { ...context, verifiedPhone };
@@ -956,7 +969,7 @@ async function processState(
           serviceName: context.serviceName,
           appointmentPurpose: context.appointmentPurpose,
         },
-        "Ese horario acaba de ocuparse. Por favor elige otra fecha.",
+        `Ese horario acaba de ocuparse. ${bookingDateInstruction()}`,
       );
     }
     await db.insert(appointmentsTable).values({
