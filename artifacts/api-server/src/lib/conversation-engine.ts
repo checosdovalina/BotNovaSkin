@@ -72,6 +72,13 @@ const humanKeywords = [
   "especialista",
 ];
 
+function isHumanRequest(normalized: string): boolean {
+  return (
+    humanKeywords.some((keyword) => normalized.includes(keyword)) ||
+    /\bhablar con alguien\b/.test(normalized)
+  );
+}
+
 const stopWords = new Set([
   "a",
   "al",
@@ -1182,7 +1189,7 @@ export async function processConversationMessage(input: {
   const normalized = normalize(input.message);
   let result: BotReply;
 
-  if (/^(menu|inicio|hola|buenas|buen dia|buenas tardes|buenas noches)$/.test(normalized)) {
+  if (/^(menu|inicio|hola|hi|buenas|buen dia|buenas tardes|buenas noches)$/.test(normalized)) {
     result = await transition(conversation, "idle", {}, menu, "bot");
   } else if (/^(salir|reiniciar|empezar de nuevo)$/.test(normalized)) {
     result = await transition(conversation, "idle", {}, menu, "bot");
@@ -1196,7 +1203,7 @@ export async function processConversationMessage(input: {
     );
   } else if (
     (normalized === "5" && conversation.state === "idle") ||
-    humanKeywords.some((keyword) => normalized.includes(keyword))
+    isHumanRequest(normalized)
   ) {
     result = await transition(
       conversation,
