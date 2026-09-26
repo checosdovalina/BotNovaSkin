@@ -1190,7 +1190,24 @@ export async function processConversationMessage(input: {
   let result: BotReply;
 
   if (/^(menu|inicio|hola|hi|buenas|buen dia|buenas tardes|buenas noches)$/.test(normalized)) {
+    result =
+      conversation.status === "human" && normalized !== "inicio"
+        ? {
+            reply: "",
+            handoff: true,
+            state: conversation.state,
+            conversationId: conversation.id,
+          }
+        : await transition(conversation, "idle", {}, menu, "bot");
+  } else if (conversation.status === "human" && normalized === "inicio") {
     result = await transition(conversation, "idle", {}, menu, "bot");
+  } else if (conversation.status === "human") {
+    result = {
+      reply: "",
+      handoff: true,
+      state: conversation.state,
+      conversationId: conversation.id,
+    };
   } else if (/^(salir|reiniciar|empezar de nuevo)$/.test(normalized)) {
     result = await transition(conversation, "idle", {}, menu, "bot");
   } else if (medicalKeywords.some((keyword) => normalized.includes(keyword))) {
@@ -1210,14 +1227,6 @@ export async function processConversationMessage(input: {
       "idle",
       {},
       "Ya derivé tu conversación a recepción. Una persona continuará la atención en cuanto esté disponible.",
-      "human",
-    );
-  } else if (conversation.status === "human") {
-    result = await transition(
-      conversation,
-      "idle",
-      conversation.context ?? {},
-      "Tu conversación sigue asignada a recepción. Si deseas volver al menú automático, escribe *inicio*.",
       "human",
     );
   } else {

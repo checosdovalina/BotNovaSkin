@@ -379,6 +379,47 @@ paths:
           $ref: "#/components/responses/BadRequest"
         "404":
           $ref: "#/components/responses/NotFound"
+  /bot/conversations/{id}/messages:
+    get:
+      operationId: listBotConversationMessages
+      tags: [bot]
+      summary: Leer los mensajes de una conversación derivada
+      parameters:
+        - $ref: "#/components/parameters/Id"
+      responses:
+        "200":
+          description: Mensajes en orden cronológico
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/BotConversationMessage"
+        "404":
+          $ref: "#/components/responses/NotFound"
+    post:
+      operationId: sendBotConversationMessage
+      tags: [bot]
+      summary: Responder desde recepción por WhatsApp
+      parameters:
+        - $ref: "#/components/parameters/Id"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/BotConversationMessageInput"
+      responses:
+        "200":
+          description: Mensaje enviado
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BotConversationMessage"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "404":
+          $ref: "#/components/responses/NotFound"
 components:
   schemas:
     HealthStatus:
@@ -693,6 +734,30 @@ components:
         status:
           $ref: "#/components/schemas/ConversationStatus"
       required: [id, status]
+    BotConversationMessage:
+      type: object
+      properties:
+        id:
+          type: number
+        direction:
+          type: string
+          enum: [inbound, outbound]
+        body:
+          type: string
+        status:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+      required: [id, direction, body, status, createdAt]
+    BotConversationMessageInput:
+      type: object
+      properties:
+        message:
+          type: string
+          minLength: 1
+          maxLength: 2000
+      required: [message]
   parameters:
     Id:
       name: id

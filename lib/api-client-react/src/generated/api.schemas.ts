@@ -206,6 +206,30 @@ export interface BotConversationUpdateResponse {
   status: ConversationStatus;
 }
 
+export type BotConversationMessageDirection = typeof BotConversationMessageDirection[keyof typeof BotConversationMessageDirection];
+
+
+export const BotConversationMessageDirection = {
+  inbound: 'inbound',
+  outbound: 'outbound',
+} as const;
+
+export interface BotConversationMessage {
+  id: number;
+  direction: BotConversationMessageDirection;
+  body: string;
+  status: string;
+  createdAt: string;
+}
+
+export interface BotConversationMessageInput {
+  /**
+     * @minLength 1
+     * @maxLength 2000
+     */
+  message: string;
+}
+
 /**
  * Solicitud inválida
  */

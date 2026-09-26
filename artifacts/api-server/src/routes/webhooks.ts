@@ -67,6 +67,13 @@ router.post("/webhooks/whatsapp", async (req, res): Promise<void> => {
     const changes = Array.isArray(entry?.changes) ? entry.changes : [];
     for (const change of changes) {
       const value = change?.value;
+      if (
+        process.env.WHATSAPP_PHONE_NUMBER_ID &&
+        value?.metadata?.phone_number_id !== process.env.WHATSAPP_PHONE_NUMBER_ID
+      ) {
+        req.log.warn("Ignoring webhook for a different WhatsApp number");
+        continue;
+      }
       const contacts = Array.isArray(value?.contacts) ? value.contacts : [];
       const clientName = contacts[0]?.profile?.name;
       const messages: WhatsAppMessage[] = Array.isArray(value?.messages)

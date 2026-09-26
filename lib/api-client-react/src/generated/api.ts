@@ -26,6 +26,8 @@ import type {
   AvailabilitySlot,
   BadRequestResponse,
   BotConversation,
+  BotConversationMessage,
+  BotConversationMessageInput,
   BotConversationUpdate,
   BotConversationUpdateResponse,
   BotSimulationInput,
@@ -1431,5 +1433,154 @@ export const useUpdateBotConversation = <TError = ErrorType<BadRequestResponse |
         TContext
       > => {
       return useMutation(getUpdateBotConversationMutationOptions(options));
+    }
+
+export const getListBotConversationMessagesUrl = (id: number,) => {
+
+
+
+
+  return `/api/bot/conversations/${id}/messages`
+}
+
+/**
+ * @summary Leer los mensajes de una conversación derivada
+ */
+export const listBotConversationMessages = async (id: number, options?: Parameters<typeof customFetch>[1]): Promise<BotConversationMessage[]> => {
+
+  return customFetch<BotConversationMessage[]>(getListBotConversationMessagesUrl(id),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getListBotConversationMessagesQueryKey = (id: number,) => {
+    return [
+    `/api/bot/conversations/${id}/messages`
+    ] as const;
+    }
+
+
+export const getListBotConversationMessagesQueryOptions = <TData = Awaited<ReturnType<typeof listBotConversationMessages>>, TError = ErrorType<NotFoundResponse>>(id: number, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listBotConversationMessages>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListBotConversationMessagesQueryKey(id);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listBotConversationMessages>>> = ({ signal }) => listBotConversationMessages(id, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: id !== null && id !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listBotConversationMessages>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type ListBotConversationMessagesQueryResult = NonNullable<Awaited<ReturnType<typeof listBotConversationMessages>>>
+export type ListBotConversationMessagesQueryError = ErrorType<NotFoundResponse>
+
+
+/**
+ * @summary Leer los mensajes de una conversación derivada
+ */
+
+export function useListBotConversationMessages<TData = Awaited<ReturnType<typeof listBotConversationMessages>>, TError = ErrorType<NotFoundResponse>>(
+ id: number, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listBotConversationMessages>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getListBotConversationMessagesQueryOptions(id,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getSendBotConversationMessageUrl = (id: number,) => {
+
+
+
+
+  return `/api/bot/conversations/${id}/messages`
+}
+
+/**
+ * @summary Responder desde recepción por WhatsApp
+ */
+export const sendBotConversationMessage = async (id: number,
+    botConversationMessageInput: BotConversationMessageInput, options?: Parameters<typeof customFetch>[1]): Promise<BotConversationMessage> => {
+
+  return customFetch<BotConversationMessage>(getSendBotConversationMessageUrl(id),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(botConversationMessageInput)
+  }
+);}
+
+
+
+
+
+export const getSendBotConversationMessageMutationOptions = <TError = ErrorType<BadRequestResponse | NotFoundResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof sendBotConversationMessage>>, TError,{id: number;data: BodyType<BotConversationMessageInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof sendBotConversationMessage>>, TError,{id: number;data: BodyType<BotConversationMessageInput>}, TContext> => {
+
+const mutationKey = ['sendBotConversationMessage'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof sendBotConversationMessage>>, {id: number;data: BodyType<BotConversationMessageInput>}> = (props) => {
+          const {id,data} = props ?? {};
+
+          return  sendBotConversationMessage(id,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type SendBotConversationMessageMutationResult = NonNullable<Awaited<ReturnType<typeof sendBotConversationMessage>>>
+    export type SendBotConversationMessageMutationBody = BodyType<BotConversationMessageInput>
+    export type SendBotConversationMessageMutationError = ErrorType<BadRequestResponse | NotFoundResponse>
+
+    /**
+ * @summary Responder desde recepción por WhatsApp
+ */
+export const useSendBotConversationMessage = <TError = ErrorType<BadRequestResponse | NotFoundResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof sendBotConversationMessage>>, TError,{id: number;data: BodyType<BotConversationMessageInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof sendBotConversationMessage>>,
+        TError,
+        {id: number;data: BodyType<BotConversationMessageInput>},
+        TContext
+      > => {
+      return useMutation(getSendBotConversationMessageMutationOptions(options));
     }
 

@@ -1,6 +1,6 @@
-import { ArrowUpRight, Check, CheckCheck, Clipboard, Cloud, Code2, ExternalLink, FileKey2, Flag, Globe2, Info, Link2, MessageCircle, RefreshCw, RotateCcw, Send, ShieldAlert, ShieldCheck, TestTube2, UserRoundCheck, Wifi } from 'lucide-react';
+import { ArrowUpRight, Check, CheckCheck, Clipboard, Cloud, Code2, ExternalLink, FileKey2, Flag, Globe2, Info, Link2, MessageCircle, RefreshCw, RotateCcw, Send, ShieldAlert, ShieldCheck, TestTube2, Wifi } from 'lucide-react';
 import { useRef, useState, type ReactNode } from 'react';
-import { getGetBotStatusQueryKey, getHealthCheckQueryKey, getListBotConversationsQueryKey, getListFaqsQueryKey, useGetBotStatus, useHealthCheck, useListBotConversations, useListFaqs, useSimulateBot, useUpdateBotConversation } from '@workspace/api-client-react';
+import { getGetBotStatusQueryKey, getHealthCheckQueryKey, getListFaqsQueryKey, useGetBotStatus, useHealthCheck, useListFaqs, useSimulateBot } from '@workspace/api-client-react';
 import { AppShell } from '@/components/shell';
 import { Button, ErrorState, PageHeader, inputClass } from '@/components/common';
 import { useToast } from '@/hooks/use-toast';
@@ -8,11 +8,6 @@ import { useToast } from '@/hooks/use-toast';
 type Message = { from: 'bot' | 'client'; text: string };
 const initialMessages: Message[] = [{ from: 'bot', text: 'Escribe “hola” para iniciar una conversación nueva con el motor real del bot.' }];
 const webhookPath = '/api/webhooks/whatsapp';
-
-function maskedPhone(phone: string) {
-  if (phone.startsWith('simulator:')) return 'Simulador del panel';
-  return phone.length > 4 ? `•••• ${phone.slice(-4)}` : phone;
-}
 
 function StepCard({ number, icon, title, description, done, children }: { number: string; icon: ReactNode; title: string; description: string; done: boolean; children: ReactNode }) {
   return <article className={`rounded-[22px] border p-5 transition-colors duration-200 ${done ? 'border-primary/25 bg-primary/[0.035]' : 'border-border bg-card'}`}>
@@ -46,10 +41,7 @@ export default function Bot() {
   const status = useGetBotStatus({ query: { queryKey: getGetBotStatusQueryKey() } });
   const health = useHealthCheck({ query: { queryKey: getHealthCheckQueryKey() } });
   const faqs = useListFaqs(undefined, { query: { queryKey: getListFaqsQueryKey(undefined) } });
-  const handoffParams = { status: 'human' as const };
-  const handoffs = useListBotConversations(handoffParams, { query: { queryKey: getListBotConversationsQueryKey(handoffParams), refetchInterval: 15000 } });
   const simulate = useSimulateBot();
-  const updateConversation = useUpdateBotConversation();
   const [messages, setMessages] = useState<Message[]>(initialMessages);
   const [draft, setDraft] = useState('');
   const [manualSteps, setManualSteps] = useState({ meta: false, deploy: false, secrets: false, webhook: false, subscription: false });
@@ -95,8 +87,7 @@ export default function Bot() {
     setDraft('');
     try {
       const response = await simulate.mutateAsync({ data: { message: value, sessionId: sessionId.current } });
-      setMessages((current) => [...current, { from: 'bot', text: response.reply }]);
-      if (response.handoff) void handoffs.refetch();
+      if (response.reply) setMessages((current) => [...current, { from: 'bot', text: response.reply }]);
     } catch {
       setMessages((current) => [...current, { from: 'bot', text: 'No pude procesar la prueba. Revisa que la API y la base de datos estén disponibles.' }]);
     }
@@ -105,11 +96,6 @@ export default function Bot() {
     if (simulate.isPending) return;
     const response = await simulate.mutateAsync({ data: { message: 'hola', sessionId: sessionId.current, reset: true } });
     setMessages([{ from: 'bot', text: response.reply }]);
-  };
-  const closeHandoff = async (id: number) => {
-    await updateConversation.mutateAsync({ id, data: { status: 'closed' } });
-    await handoffs.refetch();
-    toast({ title: 'Conversación cerrada', description: 'La derivación salió de la bandeja pendiente.' });
   };
   const runFinalTest = () => {
     setFinalTested(true);
@@ -230,14 +216,5 @@ export default function Bot() {
       </section>
     </section>
 
-    <section className="mt-6 surface rounded-[22px] p-5 sm:p-6">
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-        <div className="flex items-start gap-3"><span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-accent/35 text-[hsl(32_44%_30%)]"><UserRoundCheck size={18} /></span><div><p className="text-[10px] font-bold uppercase tracking-[.16em] text-primary">Atención humana</p><h2 className="mt-1 text-[17px] font-semibold">Conversaciones derivadas a recepción</h2><p className="mt-1 text-xs text-muted-foreground">Dudas médicas, complicaciones y solicitudes de una persona aparecen aquí automáticamente.</p></div></div>
-        <Button variant="secondary" className="h-9 px-3 text-xs" onClick={() => void handoffs.refetch()} disabled={handoffs.isFetching}><RefreshCw size={14} className={handoffs.isFetching ? 'animate-spin' : ''} />Actualizar</Button>
-      </div>
-      <div className="mt-5">
-        {handoffs.isLoading ? <div className="grid gap-3 md:grid-cols-2">{[0, 1].map((item) => <div key={item} className="h-24 animate-pulse rounded-2xl bg-muted" />)}</div> : handoffs.isError ? <ErrorState onRetry={() => void handoffs.refetch()} message="No pudimos cargar las conversaciones derivadas." /> : (handoffs.data?.length ?? 0) === 0 ? <div className="rounded-2xl border border-dashed border-border bg-muted/30 px-5 py-8 text-center"><p className="text-sm font-semibold">No hay derivaciones pendientes</p><p className="mt-1 text-xs text-muted-foreground">Cuando el bot escale una conversación, aparecerá en esta lista.</p></div> : <div className="grid gap-3 md:grid-cols-2">{handoffs.data?.map((conversation) => <article key={conversation.id} className="rounded-2xl border border-border bg-card p-4"><div className="flex items-start justify-between gap-3"><div><p className="text-sm font-semibold">{conversation.clientName || maskedPhone(conversation.phone)}</p><p className="mt-1 text-[11px] text-muted-foreground">{maskedPhone(conversation.phone)} · {conversation.messageCount} mensajes</p></div><span className="rounded-full bg-accent/30 px-2.5 py-1 text-[10px] font-bold uppercase tracking-[.08em] text-[hsl(32_44%_30%)]">Recepción</span></div><p className="mt-3 line-clamp-2 text-xs leading-relaxed text-muted-foreground">{conversation.lastMessage || 'Sin vista previa'}</p><div className="mt-4 flex items-center justify-between gap-3"><time className="text-[10px] text-muted-foreground">{new Date(conversation.lastMessageAt).toLocaleString('es-MX', { dateStyle: 'short', timeStyle: 'short' })}</time><Button variant="ghost" className="h-8 px-2.5 text-xs" onClick={() => void closeHandoff(conversation.id)} disabled={updateConversation.isPending}>Marcar atendida</Button></div></article>)}</div>}
-      </div>
-    </section>
   </AppShell>;
 }

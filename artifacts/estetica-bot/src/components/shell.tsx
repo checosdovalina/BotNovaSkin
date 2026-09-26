@@ -1,4 +1,4 @@
-import { CalendarDays, ChevronRight, CircleHelp, LayoutDashboard, MessageCircle, Scissors, Sparkles, X } from 'lucide-react';
+import { CalendarDays, ChevronRight, CircleHelp, LayoutDashboard, MessageCircle, MessagesSquare, Scissors, Sparkles, X } from 'lucide-react';
 import { Link, useLocation } from 'wouter';
 import { useState, type ReactNode } from 'react';
 
@@ -7,6 +7,7 @@ const navItems = [
   { href: '/appointments', label: 'Citas', icon: CalendarDays },
   { href: '/services', label: 'Tratamientos', icon: Scissors },
   { href: '/faqs', label: 'Preguntas del bot', icon: CircleHelp },
+  { href: '/conversations', label: 'Conversaciones', icon: MessagesSquare },
   { href: '/bot', label: 'Conexión WhatsApp', icon: MessageCircle },
 ];
 

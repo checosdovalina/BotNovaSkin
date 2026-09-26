@@ -409,3 +409,44 @@ export const UpdateBotConversationResponse = zod.object({
 })
 
 
+/**
+ * @summary Leer los mensajes de una conversación derivada
+ */
+export const ListBotConversationMessagesParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const ListBotConversationMessagesResponseItem = zod.object({
+  "id": zod.number(),
+  "direction": zod.enum(['inbound', 'outbound']),
+  "body": zod.string(),
+  "status": zod.string(),
+  "createdAt": zod.coerce.date()
+})
+export const ListBotConversationMessagesResponse = zod.array(ListBotConversationMessagesResponseItem)
+
+
+/**
+ * @summary Responder desde recepción por WhatsApp
+ */
+export const SendBotConversationMessageParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const sendBotConversationMessageBodyMessageMax = 2000;
+
+
+
+export const SendBotConversationMessageBody = zod.object({
+  "message": zod.string().min(1).max(sendBotConversationMessageBodyMessageMax)
+})
+
+export const SendBotConversationMessageResponse = zod.object({
+  "id": zod.number(),
+  "direction": zod.enum(['inbound', 'outbound']),
+  "body": zod.string(),
+  "status": zod.string(),
+  "createdAt": zod.coerce.date()
+})
+
+
