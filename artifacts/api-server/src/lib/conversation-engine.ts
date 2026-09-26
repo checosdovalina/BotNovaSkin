@@ -219,7 +219,9 @@ function parseDate(message: string): string | undefined {
     sabado: 6,
     domingo: 0,
   };
-  const weekday = value.match(/^(?:(?:el|proximo|este) )?(lunes|martes|miercoles|jueves|viernes|sabado|domingo)$/);
+  const weekday = value.match(
+    /^(?:el\s+)?(?:(?:proximo|este)\s+)?(lunes|martes|miercoles|jueves|viernes|sabado|domingo)(?:\s+(?:mas cercano|que viene))?$/,
+  );
   if (weekday) {
     const [year, month, day] = today.split("-").map(Number);
     const currentDay = new Date(Date.UTC(year, month - 1, day)).getUTCDay();
@@ -258,7 +260,7 @@ function bookingDateExample(): string {
 }
 
 function bookingDateInstruction(): string {
-  return `¿Qué fecha prefieres? Responde con el día, por ejemplo *lunes* (el lunes más cercano), escribe *mañana* o una fecha exacta en formato *DD/MM/AAAA*, por ejemplo *${bookingDateExample()}*. Atendemos de lunes a sábado.`;
+  return `¿Qué fecha prefieres? Puedes escribir *lunes*, *el próximo martes*, *martes más cercano*, *mañana* o una fecha exacta en formato *DD/MM/AAAA*, por ejemplo *${bookingDateExample()}*. Atendemos de lunes a sábado.`;
 }
 
 function parseTime(message: string): string | undefined {
@@ -791,11 +793,11 @@ async function processState(
   if (conversation.state === "await_date") {
     const date = parseDate(message);
     if (!date || !validDate(date)) {
-      const faq = await findFaq(
-        message,
-        context.serviceName,
-        context.serviceId,
-      );
+      const looksLikeDate = /\b(lunes|martes|miercoles|jueves|viernes|sabado|domingo|manana|hoy|fecha|proximo|cercano)\b/.test(normalizedMessage) ||
+        /\d{1,2}[/-]\d{1,2}/.test(normalizedMessage);
+      const faq = looksLikeDate
+        ? undefined
+        : await findFaq(message, context.serviceName, context.serviceId);
       if (faq) {
         return transition(
           conversation,
