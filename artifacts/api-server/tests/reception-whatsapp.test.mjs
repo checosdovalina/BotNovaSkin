@@ -6,11 +6,12 @@ import { join } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import { build } from "esbuild";
 
-// Bundle the real delivery module, replacing only its external services. No DB,
-// Clerk account, or Meta credentials are needed and no real messages can escape.
+// Bundle the real delivery module, replacing only its external services. No DB
+// credentials are needed and no real messages can escape.
 const modules = {
   "@workspace/db": `
-    export const receptionPushKeysTable = "keys";
+    export const localUsersTable = { id: "id", email: "email", active: "active" };
+    export const receptionPushKeysTable = { id: "id" };
     export const receptionPushSubscriptionsTable = "push";
     export const receptionWhatsappAlertsTable = {
       userId: "userId", phone: "phone", verifiedAt: "verifiedAt"
@@ -22,7 +23,9 @@ const modules = {
             const rows = () => table === receptionPushSubscriptionsTable
               ? globalThis.receptionTest.subscriptions
               : table === receptionWhatsappAlertsTable
-                ? globalThis.receptionTest.alerts : [];
+                ? globalThis.receptionTest.alerts
+                : table === receptionPushKeysTable ? globalThis.receptionTest.pushKeys
+                : table === localUsersTable ? globalThis.receptionTest.localUsers : [];
             return {
               then(resolve, reject) { return Promise.resolve([...rows()]).then(resolve, reject); },
               where(predicate) {
@@ -36,19 +39,19 @@ const modules = {
   `,
   "drizzle-orm": `
     export const eq = (field, value) => (row) => row[field] === value;
+    export const inArray = (field, values) => (row) => values.includes(row[field]);
     export const isNotNull = (field) => (row) => row[field] != null;
     export const and = (...predicates) => (row) => predicates.every((predicate) => predicate(row));
   `,
-  "web-push": `export default {};`,
-  "./logger": `export const logger = { warn() {} };`,
-  "@clerk/express": `
-    export const clerkClient = {
-      users: { async getUser(id) {
-        await globalThis.receptionTest.onGetUser?.();
-        return globalThis.receptionTest.users[id];
-      } }
+  "web-push": `
+    export default {
+      setVapidDetails() {},
+      async sendNotification(subscription) {
+        globalThis.receptionTest.pushes.push(subscription);
+      }
     };
   `,
+  "./logger": `export const logger = { warn(...args) { globalThis.receptionTest.errors.push(args); } };`,
   "./whatsapp": `
     export const whatsappConfigured = () => globalThis.receptionTest.whatsappConfigured;
     export const sendWhatsAppTemplate = async (...args) => {
@@ -107,17 +110,12 @@ function setup() {
   globalThis.receptionTest = {
     alerts: [],
     subscriptions: [],
-    users: {
-      receptionist: {
-        primaryEmailAddressId: "primary",
-        emailAddresses: [{
-          id: "primary", emailAddress: "reception@example.test",
-          verification: { status: "verified" },
-        }],
-      },
-    },
+    localUsers: [{ id: "receptionist", email: "reception@example.test", active: true }],
     whatsappConfigured: true,
     sent: [],
+    pushes: [],
+    pushKeys: [{ id: "reception", publicKey: "public", privateKey: "private" }],
+    errors: [],
   };
   return globalThis.receptionTest;
 }
@@ -145,34 +143,49 @@ test("pending registration and opt-out do not send an alert", async () => {
   assert.equal(state.sent.length, 1);
 });
 
-test("opt-out during authorization revokes a previously loaded recipient", async () => {
+test("an account deactivated after authorization revokes a previously loaded recipient", async () => {
   const state = setup();
   state.alerts.push({ userId: "receptionist", phone: "5215550000000", verifiedAt: new Date() });
-  state.onGetUser = () => { state.alerts.length = 0; };
+  state.localUsers[0].active = false;
   await notifyReceptionOfHandoff();
   assert.deepEqual(state.sent, []);
 });
 
-test("a recipient without a verified, allowed primary email receives nothing", async () => {
+test("active local staff receive notices without an email allowlist; Clerk IDs never do", async () => {
   const state = setup();
-  state.alerts.push({ userId: "receptionist", phone: "5215550000000", verifiedAt: new Date() });
-  state.users.receptionist.emailAddresses[0].verification.status = "unverified";
+  state.localUsers[0] = { id: "staff-account", email: "staff@example.test", active: true };
+  state.subscriptions.push({
+    userId: "staff-account", endpoint: "https://push.example.test",
+    p256dh: "key", auth: "auth",
+  });
+  state.subscriptions.push({
+    userId: "user_legacy_clerk_id", endpoint: "https://push.example.test",
+    p256dh: "key", auth: "auth",
+  });
   await notifyReceptionOfHandoff();
-  assert.deepEqual(state.sent, []);
-  state.users.receptionist.emailAddresses[0].verification.status = "verified";
-  state.users.receptionist.emailAddresses[0].emailAddress = "other@example.test";
-  await notifyReceptionOfHandoff();
-  assert.deepEqual(state.sent, []);
+  assert.deepEqual(state.errors, []);
+  assert.equal(state.pushes.length, 1);
+  assert.equal(state.pushes[0].endpoint, "https://push.example.test");
 });
 
-test("missing allowlist or WhatsApp configuration prevents delivery", async () => {
+test("inactive local accounts do not receive push or WhatsApp notices", async () => {
+  const state = setup();
+  state.localUsers[0].active = false;
+  state.alerts.push({ userId: "receptionist", phone: "5215550000000", verifiedAt: new Date() });
+  state.subscriptions.push({
+    userId: "receptionist", endpoint: "https://push.example.test",
+    p256dh: "key", auth: "auth",
+  });
+  await notifyReceptionOfHandoff();
+  assert.deepEqual(state.sent, []);
+  assert.deepEqual(state.pushes, []);
+});
+
+test("WhatsApp configuration requirements still suppress alternate notices", async () => {
   const state = setup();
   state.alerts.push({ userId: "receptionist", phone: "5215550000000", verifiedAt: new Date() });
-  delete process.env.RECEPTION_ALLOWED_EMAILS;
-  await notifyReceptionOfHandoff();
   delete process.env.RECEPTION_WHATSAPP_TEMPLATE;
   await notifyReceptionOfHandoff();
-  Object.assign(process.env, config);
   state.whatsappConfigured = false;
   await notifyReceptionOfHandoff();
   assert.deepEqual(state.sent, []);

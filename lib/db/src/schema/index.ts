@@ -20,5 +20,6 @@
 export * from "./appointments";
 export * from "./conversations";
 export * from "./faqs";
+export * from "./local-auth";
 export * from "./reception-push";
 export * from "./services";

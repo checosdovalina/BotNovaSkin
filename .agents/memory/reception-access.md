@@ -3,8 +3,8 @@ name: Acceso de recepción
 description: Criterio de autorización para conversaciones privadas de WhatsApp
 ---
 
-La identidad iniciada en Clerk no basta para autorizar operaciones de recepción. Exigir que el correo principal esté verificado y en la lista configurada por el responsable; si no hay lista o la verificación falla, denegar el acceso.
+En la VPS, una sesión válida solo autoriza operaciones de recepción cuando corresponde a una cuenta local activa creada por el administrador. El autorregistro público debe permanecer cerrado. No conservar una segunda lista de correos como requisito de acceso: una cuenta creada por el administrador debe poder operar el simulador y la bandeja sin editar variables de entorno.
 
-**Why:** Una cuenta recién creada no debe poder enumerar conversaciones, leer historiales ni enviar mensajes en nombre del negocio. Antes de esta decisión las rutas operativas podían usarse anónimamente.
+**Why:** La lista de correos verificados era necesaria cuando cualquier persona podía abrir una cuenta de Clerk. El usuario eligió cuentas individuales gestionadas por el administrador en la VPS; mantener la lista antigua bloquearía a personal recién dado de alta. Las identidades antiguas de Clerk tampoco deben recibir avisos ni acceder a conversaciones.
 
-**How to apply:** Mantener esta autorización tanto al introducir nuevas rutas de conversación como al modificar la autenticación. No reemplazar la lista por la simple presencia de una sesión.
+**How to apply:** Comprobar en base de datos la actividad y el rol en cada acceso privado; mantener el webhook público solo con su verificación de firma. Los permisos de administrador siguen siendo separados de los de recepción. Revocar sesiones y avisos al desactivar una cuenta.

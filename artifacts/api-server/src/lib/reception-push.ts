@@ -1,8 +1,9 @@
-import { db, receptionPushKeysTable, receptionPushSubscriptionsTable, receptionWhatsappAlertsTable } from "@workspace/db";
-import { and, eq, isNotNull } from "drizzle-orm";
+import {
+  db, localUsersTable, receptionPushKeysTable, receptionPushSubscriptionsTable, receptionWhatsappAlertsTable,
+} from "@workspace/db";
+import { and, eq, inArray, isNotNull } from "drizzle-orm";
 import webpush from "web-push";
 import { logger } from "./logger";
-import { clerkClient } from "@clerk/express";
 import { sendWhatsAppTemplate, whatsappConfigured } from "./whatsapp";
 
 function receptionInboxUrl() {
@@ -70,19 +71,13 @@ export async function notifyReceptionOfHandoff() {
         Promise.resolve([] as (typeof receptionWhatsappAlertsTable.$inferSelect)[]),
     ]);
     if (!subscriptions.length && !alternateRecipients.length) return;
-    const allowed = (process.env.RECEPTION_ALLOWED_EMAILS ?? "").split(",").map((email) => email.trim().toLowerCase()).filter(Boolean);
-    if (!allowed.length) return;
-    const authorized = new Set<string>();
-    await Promise.all([...new Set([...subscriptions, ...alternateRecipients].map((recipient) => recipient.userId))].map(async (userId) => {
-      try {
-        const user = await clerkClient.users.getUser(userId);
-        const primary = user.emailAddresses.find((email) => email.id === user.primaryEmailAddressId);
-        if (primary?.verification?.status === "verified" && allowed.includes(primary.emailAddress.toLowerCase())) authorized.add(userId);
-      } catch {
-        // Fail closed when authorization cannot be checked.
-        logger.warn("Could not verify reception push recipient");
-      }
-    }));
+    const recipientIds = [...new Set([...subscriptions, ...alternateRecipients].map((recipient) => recipient.userId))];
+    const localUsers = recipientIds.length
+      ? await db.select({ id: localUsersTable.id })
+        .from(localUsersTable).where(and(inArray(localUsersTable.id, recipientIds), eq(localUsersTable.active, true)))
+      : [];
+    // Only locally provisioned, active accounts can receive notices; legacy Clerk IDs never resolve here.
+    const authorized = new Set(localUsers.map((user) => user.id));
     const recipients = subscriptions.filter((subscription) => authorized.has(subscription.userId));
     const pushDelivery = (async () => {
       if (!recipients.length) return;

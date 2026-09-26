@@ -1,5 +1,4 @@
 import { Router, type IRouter } from "express";
-import { getAuth } from "@clerk/express";
 import { createHmac, randomInt, timingSafeEqual } from "node:crypto";
 import { db, receptionPushSubscriptionsTable, receptionWhatsappAlertsTable } from "@workspace/db";
 import { and, eq, gt, isNull, lt, or, sql } from "drizzle-orm";
@@ -50,7 +49,7 @@ function verificationHash(userId: string, phone: string, code: string) {
 
 router.get("/bot/alternate-alert", async (req, res): Promise<void> => {
   const [entry] = await db.select().from(receptionWhatsappAlertsTable)
-    .where(eq(receptionWhatsappAlertsTable.userId, getAuth(req).userId!));
+    .where(eq(receptionWhatsappAlertsTable.userId, req.localUser!.id));
   res.json(GetReceptionAlternateAlertResponse.parse({
     enabled: Boolean(entry?.verifiedAt), pending: Boolean(entry && !entry.verifiedAt),
     available: alternateAlertsAvailable(), ...(entry ? { phone: entry.phone } : {}),
@@ -67,7 +66,7 @@ router.put("/bot/alternate-alert", async (req, res): Promise<void> => {
     res.status(503).json({ error: "Los avisos por WhatsApp aún no están configurados." });
     return;
   }
-  const userId = getAuth(req).userId!;
+  const userId = req.localUser!.id;
   const [existing] = await db.select().from(receptionWhatsappAlertsTable).where(eq(receptionWhatsappAlertsTable.userId, userId));
   if (existing?.verifiedAt && existing.phone === parsed.data.phone) {
     res.json(UpdateReceptionAlternateAlertResponse.parse({
@@ -118,7 +117,7 @@ router.post("/bot/alternate-alert/confirm", async (req, res): Promise<void> => {
     res.status(400).json({ error: "Introduce el código de ocho dígitos." });
     return;
   }
-  const userId = getAuth(req).userId!;
+  const userId = req.localUser!.id;
   // Atomically consume one of five attempts even under concurrent requests.
   const [entry] = await db.update(receptionWhatsappAlertsTable)
     .set({ attempts: sql`${receptionWhatsappAlertsTable.attempts} + 1` })
@@ -151,7 +150,7 @@ router.post("/bot/alternate-alert/confirm", async (req, res): Promise<void> => {
 });
 
 router.delete("/bot/alternate-alert", async (req, res): Promise<void> => {
-  await db.delete(receptionWhatsappAlertsTable).where(eq(receptionWhatsappAlertsTable.userId, getAuth(req).userId!));
+  await db.delete(receptionWhatsappAlertsTable).where(eq(receptionWhatsappAlertsTable.userId, req.localUser!.id));
   res.sendStatus(204);
 });
 
@@ -166,7 +165,7 @@ router.post("/bot/push", async (req, res): Promise<void> => {
     res.status(400).json({ error: "Suscripción de navegador inválida" });
     return;
   }
-  const userId = getAuth(req).userId!;
+  const userId = req.localUser!.id;
   await db.insert(receptionPushSubscriptionsTable).values({
     endpoint: parsed.data.endpoint, userId,
     p256dh: parsed.data.keys.p256dh, auth: parsed.data.keys.auth,
@@ -185,7 +184,7 @@ router.delete("/bot/push", async (req, res): Promise<void> => {
   }
   await db.delete(receptionPushSubscriptionsTable).where(and(
     eq(receptionPushSubscriptionsTable.endpoint, parsed.data.endpoint),
-    eq(receptionPushSubscriptionsTable.userId, getAuth(req).userId!),
+    eq(receptionPushSubscriptionsTable.userId, req.localUser!.id),
   ));
   res.sendStatus(204);
 });

@@ -1,6 +1,7 @@
-import { CalendarDays, ChevronRight, CircleHelp, LayoutDashboard, MessageCircle, MessagesSquare, Scissors, Sparkles, X } from 'lucide-react';
+import { CalendarDays, ChevronRight, CircleHelp, LayoutDashboard, MessageCircle, MessagesSquare, Scissors, Sparkles, X, UserRound, UsersRound } from 'lucide-react';
 import { Link, useLocation } from 'wouter';
 import { useState, type ReactNode } from 'react';
+import { useLocalAuth } from '@/components/auth-provider';
 
 const navItems = [
   { href: '/', label: 'Resumen', icon: LayoutDashboard },
@@ -14,6 +15,7 @@ const navItems = [
 export function AppShell({ children }: { children: ReactNode }) {
   const [location] = useLocation();
   const [mobileOpen, setMobileOpen] = useState(false);
+  const { user } = useLocalAuth();
   const active = (href: string) => href === '/' ? location === '/' : location.startsWith(href);
 
   return (
@@ -42,6 +44,9 @@ export function AppShell({ children }: { children: ReactNode }) {
               {active(href) && <ChevronRight size={15} className="opacity-60" />}
             </Link>
           ))}
+          <p className="mb-3 mt-8 px-3 text-[10px] font-semibold uppercase tracking-[.2em] opacity-45">Acceso</p>
+          {user?.role === 'admin' && <Link href="/admin/users" onClick={() => setMobileOpen(false)} className={`flex items-center gap-3 rounded-xl px-3 py-3 text-[13px] font-medium ${active('/admin/users') ? 'bg-sidebar-primary text-sidebar-primary-foreground' : 'text-sidebar-foreground/65 hover:bg-sidebar-accent hover:text-sidebar-foreground'}`} data-testid="link-nav-users"><UsersRound size={17} />Equipo y accesos</Link>}
+          <Link href="/account" onClick={() => setMobileOpen(false)} className={`flex items-center gap-3 rounded-xl px-3 py-3 text-[13px] font-medium ${active('/account') ? 'bg-sidebar-primary text-sidebar-primary-foreground' : 'text-sidebar-foreground/65 hover:bg-sidebar-accent hover:text-sidebar-foreground'}`} data-testid="link-nav-account"><UserRound size={17} />Mi cuenta</Link>
         </nav>
         <div className="mt-auto rounded-2xl border border-sidebar-border bg-sidebar-accent/70 p-4">
           <div className="mb-3 flex items-center gap-2">
@@ -59,11 +64,11 @@ export function AppShell({ children }: { children: ReactNode }) {
           </button>
           <div className="hidden md:block">
             <p className="text-[11px] font-semibold uppercase tracking-[.18em] text-muted-foreground">Panel de atención</p>
-            <p className="mt-0.5 text-sm text-foreground/70">Martes, 24 de septiembre de 2024</p>
+             <p className="mt-0.5 text-sm text-foreground/70">{new Intl.DateTimeFormat('es-MX', { dateStyle: 'full' }).format(new Date())}</p>
           </div>
           <div className="ml-auto flex items-center gap-3">
-            <span className="hidden text-right sm:block"><span className="block text-xs font-semibold">Recepción</span><span className="block text-[11px] text-muted-foreground">Turno matutino</span></span>
-            <span className="flex h-9 w-9 items-center justify-center rounded-full bg-secondary text-xs font-bold text-secondary-foreground">RC</span>
+             <span className="hidden max-w-[180px] text-right sm:block"><span className="block truncate text-xs font-semibold">{user?.email}</span><span className="block text-[11px] text-muted-foreground">{user?.role === 'admin' ? 'Administración' : 'Recepción'}</span></span>
+             <Link href="/account" className="flex h-9 w-9 items-center justify-center rounded-full bg-secondary text-xs font-bold text-secondary-foreground" aria-label="Mi cuenta" data-testid="link-header-account">{user?.email.slice(0, 2).toUpperCase()}</Link>
           </div>
         </header>
         <main className="px-5 py-7 md:px-10 md:py-9">{children}</main>

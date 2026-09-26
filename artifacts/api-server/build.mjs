@@ -118,6 +118,16 @@ globalThis.__dirname = __bannerPath.dirname(globalThis.__filename);
     `,
     },
   });
+  await esbuild({
+    entryPoints: [path.resolve(artifactDir, "src/cli/bootstrap-admin.ts")],
+    platform: "node",
+    bundle: true,
+    format: "esm",
+    outfile: path.resolve(distDir, "bootstrap-admin.mjs"),
+    logLevel: "info",
+    external: ["pg-native"],
+    sourcemap: "linked",
+  });
 }
 
 buildAll().catch((err) => {

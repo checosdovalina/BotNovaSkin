@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { SignOutButton } from '@clerk/react';
+import { Link } from 'wouter';
 import { MessageCircle, RefreshCw, Send } from 'lucide-react';
 import {
   getListBotConversationMessagesQueryKey,
@@ -111,7 +111,7 @@ export function ReceptionInbox() {
       </div>
        <div className="flex gap-2">
         <Button variant="secondary" className="h-9 px-3 text-xs" onClick={() => void refresh()} disabled={handoffs.isFetching}><RefreshCw size={14} />Actualizar</Button>
-         <SignOutButton redirectUrl={`${import.meta.env.BASE_URL}conversations`}><Button variant="ghost" className="h-9 px-3 text-xs">Cerrar sesión</Button></SignOutButton>
+         <Link href="/account" className="inline-flex h-9 items-center rounded-xl px-3 text-xs font-semibold text-muted-foreground hover:bg-muted" data-testid="link-inbox-account">Mi cuenta</Link>
        </div>
     </div>
 

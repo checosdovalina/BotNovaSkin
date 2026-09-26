@@ -1,5 +1,5 @@
 import { ArrowUpRight, Check, CheckCheck, Clipboard, Cloud, Code2, ExternalLink, FileKey2, Flag, Globe2, Info, Link2, LogOut, MessageCircle, RefreshCw, RotateCcw, Send, ShieldAlert, ShieldCheck, TestTube2, Wifi } from 'lucide-react';
-import { SignOutButton } from '@clerk/react';
+import { Link } from 'wouter';
 import { useRef, useState, type ReactNode } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { getGetBotStatusQueryKey, getHealthCheckQueryKey, getListBotConversationsQueryKey, getListFaqsQueryKey, useGetBotStatus, useHealthCheck, useListFaqs, useSimulateBot } from '@workspace/api-client-react';
@@ -109,7 +109,7 @@ export default function Bot() {
   };
 
   return <AppShell>
-    <PageHeader eyebrow="Canal de atención · Meta Cloud API" title="Conexión WhatsApp" description="Acompaña cada conversación sin perder el contexto. La configuración y el simulador siguen disponibles más abajo." action={<div className="flex flex-wrap gap-2"><Button variant="secondary" onClick={() => void refreshAll()} disabled={status.isFetching || health.isFetching} data-testid="button-refresh-bot"><RefreshCw size={15} className={status.isFetching ? 'animate-spin' : ''} />Actualizar estado</Button><SignOutButton redirectUrl={`${import.meta.env.BASE_URL}bot`}><Button variant="secondary"><LogOut size={15} />Cerrar sesión</Button></SignOutButton></div>} />
+    <PageHeader eyebrow="Canal de atención · Meta Cloud API" title="Conexión WhatsApp" description="Acompaña cada conversación sin perder el contexto. La configuración y el simulador siguen disponibles más abajo." action={<div className="flex flex-wrap gap-2"><Button variant="secondary" onClick={() => void refreshAll()} disabled={status.isFetching || health.isFetching} data-testid="button-refresh-bot"><RefreshCw size={15} className={status.isFetching ? 'animate-spin' : ''} />Actualizar estado</Button><Link href="/account" className="inline-flex h-10 items-center gap-2 rounded-xl bg-secondary px-4 text-[13px] font-semibold text-secondary-foreground" data-testid="link-bot-account"><LogOut size={15} />Mi cuenta</Link></div>} />
 
     <BotInbox connected={Boolean(bot?.connected)} connectionLoading={status.isLoading} connectionError={status.isError} />
 
