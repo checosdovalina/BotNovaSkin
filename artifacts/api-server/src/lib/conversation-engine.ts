@@ -210,6 +210,22 @@ function parseDate(message: string): string | undefined {
   if (value.includes("pasado manana")) return addDays(today, 2);
   if (value.includes("manana")) return addDays(today, 1);
   if (value === "hoy" || value.includes(" para hoy")) return today;
+  const weekdays: Record<string, number> = {
+    lunes: 1,
+    martes: 2,
+    miercoles: 3,
+    jueves: 4,
+    viernes: 5,
+    sabado: 6,
+    domingo: 0,
+  };
+  const weekday = value.match(/^(?:(?:el|proximo|este) )?(lunes|martes|miercoles|jueves|viernes|sabado|domingo)$/);
+  if (weekday) {
+    const [year, month, day] = today.split("-").map(Number);
+    const currentDay = new Date(Date.UTC(year, month - 1, day)).getUTCDay();
+    const offset = (weekdays[weekday[1]] - currentDay + 7) % 7;
+    return addDays(today, offset === 0 && value.includes("proximo") ? 7 : offset);
+  }
 
   const iso = value.match(/\b(20\d{2})-(\d{1,2})-(\d{1,2})\b/);
   if (iso) {
@@ -280,6 +296,20 @@ async function activeServices() {
     .orderBy(asc(servicesTable.category), asc(servicesTable.name));
 }
 
+function hidePriceUntilAsked(name: string): boolean {
+  return ["bioestimuladores", "toxina botulinica"].includes(normalize(name));
+}
+
+function serviceDetails(
+  service: Awaited<ReturnType<typeof activeServices>>[number],
+  showPrice = false,
+): string {
+  const priceLine = showPrice || !hidePriceUntilAsked(service.name)
+    ? `\nPrecio: ${service.price > 0 ? currency(service.price) : "se confirma en valoración"}.`
+    : "\nSi deseas conocer el precio, pregúntame *¿cuánto cuesta?*.";
+  return `*${service.name}*\n${service.description}\nDuración aproximada: ${service.durationMinutes} minutos.${priceLine}`;
+}
+
 async function serviceList(): Promise<string> {
   const services = await activeServices();
   if (services.length === 0) {
@@ -290,12 +320,14 @@ async function serviceList(): Promise<string> {
     "",
     ...services.map(
       (service, index) =>
-        `${index + 1}. *${service.name}* — ${
-          service.price > 0 ? currency(service.price) : "precio por valoración"
+        `${index + 1}. *${service.name}*${
+          hidePriceUntilAsked(service.name)
+            ? ""
+            : ` — ${service.price > 0 ? currency(service.price) : "precio por valoración"}`
         }`,
     ),
     "",
-    "Escribe el número o nombre del tratamiento para conocer los detalles o escribe *cita* para agendar.",
+    "Escribe el número o nombre del tratamiento para conocer los detalles. Puedes preguntar el precio después o escribir *cita* para agendar.",
   ].join("\n");
 }
 
@@ -329,8 +361,10 @@ async function appointmentServiceList(
     "",
     ...services.map(
       (service, index) =>
-        `${index + 1}. *${service.name}* — ${
-          service.price > 0 ? currency(service.price) : "precio por valoración"
+        `${index + 1}. *${service.name}*${
+          hidePriceUntilAsked(service.name)
+            ? ""
+            : ` — ${service.price > 0 ? currency(service.price) : "precio por valoración"}`
         }`,
     ),
     "",
@@ -568,7 +602,7 @@ async function startAppointment(
         serviceName: conversation.context.serviceName,
         appointmentPurpose: "valuation",
       },
-      `Claro. Agendaremos una valoración para *${conversation.context.serviceName}*.\n\n¿Qué fecha prefieres? Escribe, por ejemplo, *mañana* o *20/09/2026*. Atendemos de lunes a sábado.`,
+      `Claro. Agendaremos una valoración para *${conversation.context.serviceName}*.\n\n¿Qué fecha prefieres? Escribe, por ejemplo, *lunes*, *mañana* o una fecha en formato *DD/MM/AAAA*. Atendemos de lunes a sábado.`,
       "bot",
     );
   }
@@ -637,6 +671,46 @@ async function processState(
     "await_phone",
     "await_confirm",
   ];
+  if (conversation.state === "await_catalog_service") {
+    if (isAppointmentBookingIntent(normalizedMessage)) {
+      return startAppointment(conversation);
+    }
+    if (/\b(precio|precios|costo|costos|cuesta|cuestan|vale|valen)\b/.test(normalizedMessage) ||
+        normalizedMessage.includes("cuanto sale")) {
+      const requestedService = await selectService(message);
+      if (requestedService) {
+        return transition(
+          conversation,
+          "idle",
+          { serviceId: requestedService.id, serviceName: requestedService.name },
+          `El precio de *${requestedService.name}* es ${
+            requestedService.price > 0 ? currency(requestedService.price) : "por valoración"
+          }.\n\nEscribe *cita* si deseas agendar.`,
+        );
+      }
+      return transition(
+        conversation,
+        "await_catalog_service",
+        context,
+        "Elige primero el número o nombre del tratamiento y después te comparto su precio.",
+      );
+    }
+    const service = await selectService(message);
+    if (!service) {
+      return transition(
+        conversation,
+        "await_catalog_service",
+        context,
+        `No identifiqué ese tratamiento.\n\n${await serviceList()}`,
+      );
+    }
+    return transition(
+      conversation,
+      "idle",
+      { serviceId: service.id, serviceName: service.name },
+      `${serviceDetails(service)}\n\nPuedes escribir tu pregunta sobre este tratamiento o *cita* para agendar.`,
+    );
+  }
   if (conversation.state === "await_general_service") {
     const service = await selectService(message);
     if (!service) {
@@ -697,7 +771,7 @@ async function processState(
         context.appointmentPurpose === "valuation"
           ? " para la valoración"
           : ""
-      }.\n\n¿Qué fecha prefieres? Escribe, por ejemplo, *mañana* o *20/09/2026*. Atendemos de lunes a sábado.`,
+      }.\n\n¿Qué fecha prefieres? Escribe, por ejemplo, *lunes*, *mañana* o una fecha en formato *DD/MM/AAAA*. Atendemos de lunes a sábado.`,
     );
   }
 
@@ -714,14 +788,14 @@ async function processState(
           conversation,
           "await_date",
           context,
-          `${faq.answer}\n\nEsta información es general y no sustituye una valoración profesional.\n\nPara continuar con la cita, escribe la fecha que prefieres, por ejemplo *mañana* o *20/09/2026*.`,
+          `${faq.answer}\n\nEsta información es general y no sustituye una valoración profesional.\n\nPara continuar con la cita, escribe la fecha que prefieres, por ejemplo *lunes*, *mañana* o una fecha en formato *DD/MM/AAAA*.`,
         );
       }
       return transition(
         conversation,
         "await_date",
         context,
-        "No pude validar esa fecha. Escribe una fecha futura de lunes a sábado en formato DD/MM/AAAA, o escribe *mañana*.",
+        "No pude validar esa fecha. Escribe un día de lunes a sábado, *mañana* o una fecha en formato DD/MM/AAAA.",
       );
     }
     const times = await availableTimes(date);
@@ -979,7 +1053,7 @@ async function processState(
         conversation,
         "await_reschedule_date",
         context,
-        "Escribe una fecha futura de lunes a sábado en formato DD/MM/AAAA.",
+        "Escribe un día de lunes a sábado, *mañana* o una fecha futura en formato DD/MM/AAAA.",
       );
     }
     const times = await availableTimes(date);
@@ -1106,7 +1180,7 @@ export async function processConversationMessage(input: {
       "human",
     );
   } else if (
-    normalized === "5" ||
+    (normalized === "5" && conversation.state === "idle") ||
     humanKeywords.some((keyword) => normalized.includes(keyword))
   ) {
     result = await transition(
@@ -1130,6 +1204,14 @@ export async function processConversationMessage(input: {
       result = stateResult;
     } else {
       const exactService = await selectServiceByExactName(input.message);
+      const priceIntent = /\b(precio|precios|costo|costos|cuesta|cuestan|vale|valen)\b/.test(normalized) ||
+        normalized.includes("cuanto sale");
+      const priceService = priceIntent
+        ? (await selectService(input.message)) ??
+          (conversation.context?.serviceId
+            ? (await activeServices()).find((service) => service.id === conversation.context?.serviceId)
+            : undefined)
+        : undefined;
       const valuationPriceIntent =
         normalized.includes("valoracion") &&
         (normalized.includes("precio") ||
@@ -1159,6 +1241,7 @@ export async function processConversationMessage(input: {
           normalized.includes("igual"));
       const actionIntent =
         valuationPriceIntent ||
+        priceIntent ||
         catalogIntent ||
         businessHoursIntent ||
         businessLocationIntent ||
@@ -1233,6 +1316,15 @@ export async function processConversationMessage(input: {
           "El costo de la valoración debe confirmarlo recepción, ya que puede depender del tratamiento o especialista. Ya derivé tu conversación para que te compartan el precio vigente.",
           "human",
         );
+      } else if (priceIntent && priceService) {
+        result = await transition(
+          conversation,
+          "idle",
+          { serviceId: priceService.id, serviceName: priceService.name },
+          `El precio de *${priceService.name}* es ${
+            priceService.price > 0 ? currency(priceService.price) : "por valoración"
+          }.\n\nEscribe *cita* si deseas agendar.`,
+        );
       } else if (businessHoursIntent) {
         result = await transition(
           conversation,
@@ -1280,11 +1372,7 @@ export async function processConversationMessage(input: {
           conversation,
           "idle",
           { serviceId: exactService.id, serviceName: exactService.name },
-          `*${exactService.name}*\n${exactService.description}\nDuración aproximada: ${exactService.durationMinutes} minutos.\nPrecio: ${
-            exactService.price > 0
-              ? currency(exactService.price)
-              : "se confirma en valoración"
-          }.\n\nPuedes escribir tu pregunta sobre este tratamiento o escribir *cita* para agendar.`,
+          `${serviceDetails(exactService)}\n\nPuedes escribir tu pregunta sobre este tratamiento o escribir *cita* para agendar.`,
         );
       } else if (
         normalized === "6" ||
@@ -1315,16 +1403,12 @@ export async function processConversationMessage(input: {
           : await selectService(input.message);
         result = await transition(
           conversation,
-          "idle",
+          selected ? "idle" : "await_catalog_service",
           selected
             ? { serviceId: selected.id, serviceName: selected.name }
             : {},
           selected
-            ? `*${selected.name}*\n${selected.description}\nDuración aproximada: ${selected.durationMinutes} minutos.\nPrecio: ${
-                selected.price > 0
-                  ? currency(selected.price)
-                  : "se confirma en valoración"
-              }.\n\nEscribe *cita* si deseas agendar.`
+            ? `${serviceDetails(selected, priceIntent)}\n\nEscribe *cita* si deseas agendar.`
             : await serviceList(),
         );
       } else if (
@@ -1354,11 +1438,7 @@ export async function processConversationMessage(input: {
             conversation,
             "idle",
             { serviceId: selected.id, serviceName: selected.name },
-            `*${selected.name}*\n${selected.description}\nDuración aproximada: ${selected.durationMinutes} minutos.\nPrecio: ${
-              selected.price > 0
-                ? currency(selected.price)
-                : "se confirma en valoración"
-            }.\n\nEscribe *cita* si deseas agendar.`,
+            `${serviceDetails(selected)}\n\nEscribe *cita* si deseas agendar.`,
           );
         } else if (ai.kind === "no_knowledge") {
           result = await transition(
