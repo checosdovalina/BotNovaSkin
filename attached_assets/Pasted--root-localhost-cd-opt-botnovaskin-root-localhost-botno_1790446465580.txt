@@ -1,0 +1,95 @@
+[root@localhost ~]# cd /opt/botnovaskin
+[root@localhost botnovaskin]# OWNER=$(stat -c '%U' /opt/botnovaskin)
+sudo -u "$OWNER" -H git -C /opt/botnovaskin pull --ff-only origin main
+sudo -u "$OWNER" -H bash -lc 'cd /opt/botnovaskin && corepack pnpm@10.26.1 --filter @workspace/api-server run build'
+sudo systemctl restart botnovaskin-api
+systemctl is-active botnovaskin-api
+From https://github.com/checosdovalina/BotNovaSkin
+ * branch            main       -> FETCH_HEAD
+Already up to date.
+
+> @workspace/api-server@0.0.0 build /opt/botnovaskin/artifacts/api-server
+> node ./build.mjs
+
+✘ [ERROR] Could not resolve "@clerk/express"
+
+    src/app.ts:6:32:
+      6 │ import { clerkMiddleware } from "@clerk/express";
+        ╵                                 ~~~~~~~~~~~~~~~~
+
+  You can mark the path "@clerk/express" as external to exclude it from the bundle, which will
+  remove this error and leave the unresolved path in the bundle.
+
+✘ [ERROR] Could not resolve "@clerk/shared/keys"
+
+    src/app.ts:7:39:
+      7 │ import { publishableKeyFromHost } from "@clerk/shared/keys";
+        ╵                                        ~~~~~~~~~~~~~~~~~~~~
+
+  You can mark the path "@clerk/shared/keys" as external to exclude it from the bundle, which will
+  remove this error and leave the unresolved path in the bundle.
+
+✘ [ERROR] Could not resolve "http-proxy-middleware"
+
+    src/middlewares/clerkProxyMiddleware.ts:3:38:
+      3 │ import { createProxyMiddleware } from "http-proxy-middleware";
+        ╵                                       ~~~~~~~~~~~~~~~~~~~~~~~
+
+  You can mark the path "http-proxy-middleware" as external to exclude it from the bundle, which
+  will remove this error and leave the unresolved path in the bundle.
+
+✘ [ERROR] Could not resolve "@clerk/express"
+
+    src/routes/bot.ts:2:24:
+      2 │ import { getAuth } from "@clerk/express";
+        ╵                         ~~~~~~~~~~~~~~~~
+
+  You can mark the path "@clerk/express" as external to exclude it from the bundle, which will
+  remove this error and leave the unresolved path in the bundle.
+
+✘ [ERROR] Could not resolve "@clerk/express"
+
+    src/middlewares/requireReception.ts:1:37:
+      1 │ import { clerkClient, getAuth } from "@clerk/express";
+        ╵                                      ~~~~~~~~~~~~~~~~
+
+  You can mark the path "@clerk/express" as external to exclude it from the bundle, which will
+  remove this error and leave the unresolved path in the bundle.
+
+✘ [ERROR] Could not resolve "web-push"
+
+    src/lib/reception-push.ts:3:20:
+      3 │ import webpush from "web-push";
+        ╵                     ~~~~~~~~~~
+
+  You can mark the path "web-push" as external to exclude it from the bundle, which will remove this
+  error and leave the unresolved path in the bundle.
+
+✘ [ERROR] Could not resolve "@clerk/express"
+
+    src/lib/reception-push.ts:5:28:
+      5 │ import { clerkClient } from "@clerk/express";
+        ╵                             ~~~~~~~~~~~~~~~~
+
+  You can mark the path "@clerk/express" as external to exclude it from the bundle, which will
+  remove this error and leave the unresolved path in the bundle.
+
+7 errors
+Error: Build failed with 7 errors:
+src/app.ts:6:32: ERROR: Could not resolve "@clerk/express"
+src/app.ts:7:39: ERROR: Could not resolve "@clerk/shared/keys"
+src/lib/reception-push.ts:3:20: ERROR: Could not resolve "web-push"
+src/lib/reception-push.ts:5:28: ERROR: Could not resolve "@clerk/express"
+src/middlewares/clerkProxyMiddleware.ts:3:38: ERROR: Could not resolve "http-proxy-middleware"
+...
+    at failureErrorWithLog (/opt/botnovaskin/node_modules/.pnpm/esbuild@0.27.3/node_modules/esbuild/lib/main.js:1467:15)
+    at /opt/botnovaskin/node_modules/.pnpm/esbuild@0.27.3/node_modules/esbuild/lib/main.js:926:25
+    at /opt/botnovaskin/node_modules/.pnpm/esbuild@0.27.3/node_modules/esbuild/lib/main.js:1345:9
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5) {
+  errors: [Getter/Setter],
+  warnings: [Getter/Setter]
+}
+/opt/botnovaskin/artifacts/api-server:
+ ERR_PNPM_RECURSIVE_RUN_FIRST_FAIL  @workspace/api-server@0.0.0 build: `node ./build.mjs`
+Exit status 1
+active
