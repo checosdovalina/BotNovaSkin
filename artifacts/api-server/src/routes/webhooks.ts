@@ -1,5 +1,5 @@
 import { Router, type IRouter } from "express";
-import { processConversationMessage } from "../lib/conversation-engine";
+import { isBotControlled, processConversationMessage } from "../lib/conversation-engine";
 import {
   sendWhatsAppText,
   verifyMetaSignature,
@@ -10,6 +10,7 @@ const router: IRouter = Router();
 type WhatsAppMessage = {
   from?: string;
   id?: string;
+  timestamp?: string;
   type?: string;
   text?: { body?: string };
   button?: { text?: string };
@@ -87,10 +88,13 @@ router.post("/webhooks/whatsapp", async (req, res): Promise<void> => {
             phone: message.from,
             message: `[${message.type ?? "Archivo"} recibido; contenido no disponible en este panel]`,
             providerMessageId: message.id,
+            providerTimestamp: message.timestamp,
             clientName,
             unsupportedMedia: true,
           });
-          if (result.reply) await sendWhatsAppText(message.from, result.reply);
+          if (result.reply && (result.handoff || await isBotControlled(result.conversationId))) {
+            await sendWhatsAppText(message.from, result.reply);
+          }
           processed += 1;
           continue;
         }
@@ -98,9 +102,10 @@ router.post("/webhooks/whatsapp", async (req, res): Promise<void> => {
           phone: message.from,
           message: body,
           providerMessageId: message.id,
+          providerTimestamp: message.timestamp,
           clientName,
         });
-        if (result.reply) {
+        if (result.reply && (result.handoff || await isBotControlled(result.conversationId))) {
           await sendWhatsAppText(message.from, result.reply);
         }
         processed += 1;

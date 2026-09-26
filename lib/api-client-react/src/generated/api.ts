@@ -26,6 +26,8 @@ import type {
   AvailabilitySlot,
   BadRequestResponse,
   BotConversation,
+  BotConversationLeadUpdate,
+  BotConversationLeadUpdateResponse,
   BotConversationMessage,
   BotConversationMessageInput,
   BotConversationUpdate,
@@ -1948,6 +1950,78 @@ export const useUpdateBotConversation = <TError = ErrorType<BadRequestResponse |
         TContext
       > => {
       return useMutation(getUpdateBotConversationMutationOptions(options));
+    }
+
+export const getUpdateBotConversationLeadUrl = (id: number,) => {
+
+
+
+
+  return `/api/bot/conversations/${id}/lead`
+}
+
+/**
+ * @summary Marcar un contacto como lead y guardar su seguimiento
+ */
+export const updateBotConversationLead = async (id: number,
+    botConversationLeadUpdate: BotConversationLeadUpdate, options?: Parameters<typeof customFetch>[1]): Promise<BotConversationLeadUpdateResponse> => {
+
+  return customFetch<BotConversationLeadUpdateResponse>(getUpdateBotConversationLeadUrl(id),
+  {
+    ...options,
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(botConversationLeadUpdate)
+  }
+);}
+
+
+
+
+
+export const getUpdateBotConversationLeadMutationOptions = <TError = ErrorType<BadRequestResponse | NotFoundResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateBotConversationLead>>, TError,{id: number;data: BodyType<BotConversationLeadUpdate>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof updateBotConversationLead>>, TError,{id: number;data: BodyType<BotConversationLeadUpdate>}, TContext> => {
+
+const mutationKey = ['updateBotConversationLead'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof updateBotConversationLead>>, {id: number;data: BodyType<BotConversationLeadUpdate>}> = (props) => {
+          const {id,data} = props ?? {};
+
+          return  updateBotConversationLead(id,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type UpdateBotConversationLeadMutationResult = NonNullable<Awaited<ReturnType<typeof updateBotConversationLead>>>
+    export type UpdateBotConversationLeadMutationBody = BodyType<BotConversationLeadUpdate>
+    export type UpdateBotConversationLeadMutationError = ErrorType<BadRequestResponse | NotFoundResponse>
+
+    /**
+ * @summary Marcar un contacto como lead y guardar su seguimiento
+ */
+export const useUpdateBotConversationLead = <TError = ErrorType<BadRequestResponse | NotFoundResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateBotConversationLead>>, TError,{id: number;data: BodyType<BotConversationLeadUpdate>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof updateBotConversationLead>>,
+        TError,
+        {id: number;data: BodyType<BotConversationLeadUpdate>},
+        TContext
+      > => {
+      return useMutation(getUpdateBotConversationLeadMutationOptions(options));
     }
 
 export const getListBotConversationMessagesUrl = (id: number,) => {

@@ -75,8 +75,16 @@ sudo systemctl status botnovaskin-api --no-pager -l
 
 Ambas consultas de salud deben devolver `{"status":"ok"}`. Probar el inicio de sesión y el simulador desde el navegador HTTPS, y comprobar que una sesión sin iniciar no puede consultar `/api/bot/conversations` ni `/api/dashboard`. Si falla, revisar `sudo journalctl -u botnovaskin-api -n 80 --no-pager` antes de repetir la compilación; ocultar valores privados al compartir registros.
 
+Si una pestaña que ya estaba abierta sigue mostrando la marca anterior después de actualizar el panel, forzar la recarga de esa pestaña (`Ctrl+Shift+R` en Windows/Linux, `Cmd+Shift+R` en Mac) o abrir el sitio en una ventana privada. Comprobar primero en una sesión nueva antes de repetir el despliegue: una página React abierta puede seguir ejecutando su JavaScript anterior aunque la VPS ya sirva el archivo actualizado.
+
 El valor antiguo de `RECEPTION_ALLOWED_EMAILS` ya no determina quién puede entrar: las cuentas activas y sus roles en PostgreSQL son la fuente de autorización. Las claves `CLERK_*` dejan de ser necesarias para esta versión; retirarlas de la VPS únicamente después de comprobar el nuevo acceso.
 
 ## Error separado de recordatorios de WhatsApp
 
 Si los registros muestran `(#132001) Template name does not exist in the translation` para `recordatorio_cita_24h`, Meta no encuentra una plantilla aprobada con **ese nombre exacto y el idioma configurado** en la cuenta de WhatsApp conectada. El error no depende del inicio de sesión. Corregir el nombre y el idioma en la configuración de recordatorios de la VPS o crear y aprobar la plantilla en Meta; no marcar el recordatorio como entregado si el envío falla.
+
+## Actualización de conversaciones y leads
+
+La marca de lead, la nota y la fecha de seguimiento usan columnas nuevas de `beauty_conversations`. Antes de reiniciar la API de la VPS con esta versión, hacer copia de seguridad y seguir el orden de esta guía: `git pull`, instalación de dependencias, `@workspace/db run push` contra la base **dedicada de la VPS**, compilación de API y panel, y por último reinicio de `botnovaskin-api`. Detenerse si Drizzle propone eliminar datos.
+
+Responder a un chat existente del bot o cerrado dentro de la ventana de 24 horas lo pasa a recepción; **no lo marca como lead**. Marcarlo como lead y anotar una fecha tampoco envía mensajes ni genera recordatorios automáticamente. Texto libre fuera de esa ventana no está habilitado; no sustituirlo por envíos proactivos sin una plantilla aprobada y consentimiento.

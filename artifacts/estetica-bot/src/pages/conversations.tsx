@@ -7,7 +7,7 @@ export default function Conversations() {
     <PageHeader
       eyebrow="Atención · WhatsApp Cloud API"
       title="Conversaciones"
-      description="Revisa el historial del bot y atiende las solicitudes que necesitan una persona, desde el mismo chat."
+      description="Responde desde cualquier chat existente y marca contactos como leads para darles seguimiento."
     />
     <ReceptionInbox />
   </AppShell>;

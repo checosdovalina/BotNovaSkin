@@ -2,7 +2,8 @@ import { useState, type FormEvent } from 'react';
 import { useLocation } from 'wouter';
 import { KeyRound, LogOut, ShieldCheck } from 'lucide-react';
 import { AppShell } from '@/components/shell';
-import { Button, Field, PageHeader, inputClass } from '@/components/common';
+import { Button, PageHeader } from '@/components/common';
+import { PasswordField } from '@/components/password-field';
 import { useLocalAuth } from '@/components/auth-provider';
 import { authApi } from '@/lib/local-auth';
 
@@ -47,9 +48,9 @@ export default function Account() {
       <section className="surface rounded-[22px] p-6 sm:p-7">
         <div className="flex items-center gap-3"><span className="flex h-10 w-10 items-center justify-center rounded-xl bg-accent/30 text-primary"><KeyRound size={18} /></span><div><h2 className="text-base font-semibold">Cambiar contraseña</h2><p className="text-xs text-muted-foreground">Utiliza una contraseña nueva que solo tú conozcas.</p></div></div>
         <form onSubmit={(event) => void submit(event)} className="mt-7 space-y-4">
-          <Field label="Contraseña actual"><input type="password" autoComplete="current-password" required className={inputClass} value={current} onChange={(event) => setCurrent(event.target.value)} data-testid="input-current-password" /></Field>
-          <Field label="Nueva contraseña"><input type="password" autoComplete="new-password" required className={inputClass} value={next} onChange={(event) => setNext(event.target.value)} data-testid="input-new-password" /></Field>
-          <Field label="Confirmar contraseña nueva"><input type="password" autoComplete="new-password" required className={inputClass} value={confirm} onChange={(event) => setConfirm(event.target.value)} data-testid="input-confirm-password" /></Field>
+          <PasswordField label="Contraseña actual" autoComplete="current-password" required value={current} onChange={(event) => setCurrent(event.target.value)} data-testid="input-current-password" />
+          <PasswordField label="Nueva contraseña" autoComplete="new-password" required value={next} onChange={(event) => setNext(event.target.value)} data-testid="input-new-password" />
+          <PasswordField label="Confirmar contraseña nueva" autoComplete="new-password" required value={confirm} onChange={(event) => setConfirm(event.target.value)} data-testid="input-confirm-password" />
           {error && <p role="alert" className="text-sm text-destructive" data-testid="text-account-error">{error}</p>}
           <Button type="submit" disabled={pending} data-testid="button-change-password">{pending ? 'Guardando…' : 'Actualizar contraseña'}</Button>
         </form>

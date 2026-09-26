@@ -13,6 +13,8 @@ export * from './appointmentUpdate';
 export * from './availabilitySlot';
 export * from './badRequestResponse';
 export * from './botConversation';
+export * from './botConversationLeadUpdate';
+export * from './botConversationLeadUpdateResponse';
 export * from './botConversationMessage';
 export * from './botConversationMessageDirection';
 export * from './botConversationMessageInput';

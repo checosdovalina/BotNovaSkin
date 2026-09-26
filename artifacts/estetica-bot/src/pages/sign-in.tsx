@@ -2,6 +2,7 @@ import { useState, type FormEvent } from 'react';
 import { Link, useLocation } from 'wouter';
 import { ArrowRight, LockKeyhole, ShieldCheck } from 'lucide-react';
 import { Button, Field, inputClass } from '@/components/common';
+import { PasswordField } from '@/components/password-field';
 import { useLocalAuth } from '@/components/auth-provider';
 
 export default function SignIn() {
@@ -46,7 +47,7 @@ export default function SignIn() {
         <p className="mt-3 text-sm leading-relaxed text-muted-foreground">Inicia sesión con las credenciales que te proporcionó la administración.</p>
         <form onSubmit={(event) => void submit(event)} className="mt-9 space-y-5">
           <Field label="Correo electrónico"><input autoComplete="username" autoFocus required type="email" className={`${inputClass} h-12`} value={email} onChange={(event) => setEmail(event.target.value)} placeholder="tu@clinica.com" data-testid="input-email" /></Field>
-          <Field label="Contraseña"><input autoComplete="current-password" required type="password" className={`${inputClass} h-12`} value={password} onChange={(event) => setPassword(event.target.value)} placeholder="Tu contraseña" data-testid="input-password" /></Field>
+          <PasswordField label="Contraseña" autoComplete="current-password" required className="h-12" value={password} onChange={(event) => setPassword(event.target.value)} placeholder="Tu contraseña" data-testid="input-password" />
           {error && <p role="alert" className="rounded-xl border border-destructive/20 bg-destructive/5 p-3 text-sm text-destructive" data-testid="text-login-error">{error}</p>}
           <Button type="submit" disabled={pending} className="h-12 w-full justify-between px-5" data-testid="button-login">{pending ? 'Comprobando acceso…' : 'Entrar a recepción'}<ArrowRight size={17} /></Button>
         </form>

@@ -240,6 +240,11 @@ export interface BotConversation {
   phone: string;
   clientName: string | null;
   status: ConversationStatus;
+  isLead: boolean;
+  /** @nullable */
+  leadNote: string | null;
+  /** @nullable */
+  followUpAt: string | null;
   state: string;
   lastMessage: string;
   lastMessageAt: string;
@@ -253,6 +258,26 @@ export interface BotConversationUpdate {
 export interface BotConversationUpdateResponse {
   id: number;
   status: ConversationStatus;
+}
+
+export interface BotConversationLeadUpdate {
+  isLead: boolean;
+  /**
+     * @maxLength 2000
+     * @nullable
+     */
+  leadNote: string | null;
+  /** @nullable */
+  followUpAt: string | null;
+}
+
+export interface BotConversationLeadUpdateResponse {
+  id: number;
+  isLead: boolean;
+  /** @nullable */
+  leadNote: string | null;
+  /** @nullable */
+  followUpAt: string | null;
 }
 
 export type BotConversationMessageDirection = typeof BotConversationMessageDirection[keyof typeof BotConversationMessageDirection];

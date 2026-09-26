@@ -485,6 +485,9 @@ export const ListBotConversationsResponseItem = zod.object({
   "phone": zod.string(),
   "clientName": zod.string().nullable(),
   "status": zod.enum(['bot', 'human', 'closed']),
+  "isLead": zod.boolean(),
+  "leadNote": zod.string().nullable(),
+  "followUpAt": zod.coerce.date().nullable(),
   "state": zod.string(),
   "lastMessage": zod.string(),
   "lastMessageAt": zod.coerce.date(),
@@ -507,6 +510,31 @@ export const UpdateBotConversationBody = zod.object({
 export const UpdateBotConversationResponse = zod.object({
   "id": zod.number(),
   "status": zod.enum(['bot', 'human', 'closed'])
+})
+
+
+/**
+ * @summary Marcar un contacto como lead y guardar su seguimiento
+ */
+export const UpdateBotConversationLeadParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const updateBotConversationLeadBodyLeadNoteMax = 2000;
+
+
+
+export const UpdateBotConversationLeadBody = zod.object({
+  "isLead": zod.boolean(),
+  "leadNote": zod.string().max(updateBotConversationLeadBodyLeadNoteMax).nullable(),
+  "followUpAt": zod.coerce.date().nullable()
+})
+
+export const UpdateBotConversationLeadResponse = zod.object({
+  "id": zod.number(),
+  "isLead": zod.boolean(),
+  "leadNote": zod.string().nullable(),
+  "followUpAt": zod.coerce.date().nullable()
 })
 
 

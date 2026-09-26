@@ -16,6 +16,9 @@ import {
   UpdateBotConversationBody,
   UpdateBotConversationParams,
   UpdateBotConversationResponse,
+  UpdateBotConversationLeadBody,
+  UpdateBotConversationLeadParams,
+  UpdateBotConversationLeadResponse,
   GetReceptionPushKeyResponse,
   SubscribeReceptionPushBody,
   UnsubscribeReceptionPushBody,
@@ -33,6 +36,7 @@ import {
   resetConversation,
   sendReceptionReply,
   setConversationStatus,
+  setConversationLead,
 } from "../lib/conversation-engine";
 import { sendWhatsAppTemplate, whatsappConfigured } from "../lib/whatsapp";
 import { requireReception } from "../middlewares/requireReception";
@@ -259,6 +263,25 @@ router.patch("/bot/conversations/:id", async (req, res): Promise<void> => {
       status: conversation.status,
     }),
   );
+});
+
+router.patch("/bot/conversations/:id/lead", async (req, res): Promise<void> => {
+  const params = UpdateBotConversationLeadParams.safeParse(req.params);
+  const body = UpdateBotConversationLeadBody.safeParse(req.body);
+  if (!params.success || !body.success ||
+    (body.success && body.data.followUpAt !== null &&
+      (typeof req.body?.followUpAt !== "string" ||
+        !/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?(?:Z|[+-]\d{2}:\d{2})$/.test(req.body.followUpAt) ||
+        !Number.isFinite(Date.parse(req.body.followUpAt))))) {
+    res.status(400).json({ error: params.error?.message ?? (body.success ? "Fecha de seguimiento inválida" : body.error?.message) });
+    return;
+  }
+  const updated = await setConversationLead(params.data.id, body.data);
+  if (!updated) {
+    res.status(404).json({ error: "Conversación no encontrada" });
+    return;
+  }
+  res.json(UpdateBotConversationLeadResponse.parse(updated));
 });
 
 router.get("/bot/conversations/:id/messages", async (req, res): Promise<void> => {

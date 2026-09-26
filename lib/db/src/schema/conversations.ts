@@ -1,4 +1,5 @@
 import {
+  boolean,
   jsonb,
   pgTable,
   serial,
@@ -48,6 +49,9 @@ export const conversationsTable = pgTable(
     status: text("status", { enum: conversationStatusValues })
       .notNull()
       .default("bot"),
+    isLead: boolean("is_lead").notNull().default(false),
+    leadNote: text("lead_note"),
+    followUpAt: timestamp("follow_up_at", { withTimezone: true }),
     state: text("state", { enum: conversationStateValues })
       .notNull()
       .default("idle"),

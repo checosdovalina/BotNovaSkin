@@ -29,22 +29,22 @@ export function AppShell({ children }: { children: ReactNode }) {
               <span className="mt-1.5 block text-[9px] font-semibold uppercase tracking-[.2em] opacity-60">Torreón · recepción</span>
             </span>
           </Link>
-          <button onClick={() => setMobileOpen(false)} className="rounded-lg p-2 opacity-70 hover:bg-sidebar-accent md:hidden" aria-label="Cerrar menú" data-testid="button-close-menu">
+          <button onClick={() => setMobileOpen(false)} className="flex h-11 w-11 items-center justify-center rounded-xl opacity-70 hover:bg-sidebar-accent md:hidden" aria-label="Cerrar menú" data-testid="button-close-menu">
             <X size={17} />
           </button>
         </div>
         <nav className="space-y-1.5" aria-label="Navegación principal">
           <p className="mb-3 px-3 text-[10px] font-semibold uppercase tracking-[.2em] opacity-45">Espacio de trabajo</p>
           {navItems.map(({ href, label, icon: Icon }) => (
-            <Link key={href} href={href} onClick={() => setMobileOpen(false)} className={`group flex items-center gap-3 rounded-xl px-3 py-3 text-[13px] font-medium transition-colors ${active(href) ? 'bg-sidebar-primary text-sidebar-primary-foreground shadow-sm' : 'text-sidebar-foreground/65 hover:bg-sidebar-accent hover:text-sidebar-foreground'}`} data-testid={`link-nav-${label.toLowerCase().replaceAll(' ', '-')}`}>
+            <Link key={href} href={href} onClick={() => setMobileOpen(false)} className={`group flex min-h-11 items-center gap-3 rounded-xl px-3 py-3 text-[13px] font-medium transition-colors ${active(href) ? 'bg-sidebar-primary text-sidebar-primary-foreground shadow-sm' : 'text-sidebar-foreground/65 hover:bg-sidebar-accent hover:text-sidebar-foreground'}`} data-testid={`link-nav-${label.toLowerCase().replaceAll(' ', '-')}`}>
               <Icon size={17} strokeWidth={active(href) ? 2.2 : 1.8} />
               <span className="flex-1">{label}</span>
               {active(href) && <ChevronRight size={15} className="opacity-60" />}
             </Link>
           ))}
           <p className="mb-3 mt-8 px-3 text-[10px] font-semibold uppercase tracking-[.2em] opacity-45">Acceso</p>
-          {user?.role === 'admin' && <Link href="/admin/users" onClick={() => setMobileOpen(false)} className={`flex items-center gap-3 rounded-xl px-3 py-3 text-[13px] font-medium ${active('/admin/users') ? 'bg-sidebar-primary text-sidebar-primary-foreground' : 'text-sidebar-foreground/65 hover:bg-sidebar-accent hover:text-sidebar-foreground'}`} data-testid="link-nav-users"><UsersRound size={17} />Equipo y accesos</Link>}
-          <Link href="/account" onClick={() => setMobileOpen(false)} className={`flex items-center gap-3 rounded-xl px-3 py-3 text-[13px] font-medium ${active('/account') ? 'bg-sidebar-primary text-sidebar-primary-foreground' : 'text-sidebar-foreground/65 hover:bg-sidebar-accent hover:text-sidebar-foreground'}`} data-testid="link-nav-account"><UserRound size={17} />Mi cuenta</Link>
+          {user?.role === 'admin' && <Link href="/admin/users" onClick={() => setMobileOpen(false)} className={`flex min-h-11 items-center gap-3 rounded-xl px-3 py-3 text-[13px] font-medium ${active('/admin/users') ? 'bg-sidebar-primary text-sidebar-primary-foreground' : 'text-sidebar-foreground/65 hover:bg-sidebar-accent hover:text-sidebar-foreground'}`} data-testid="link-nav-users"><UsersRound size={17} />Equipo y accesos</Link>}
+          <Link href="/account" onClick={() => setMobileOpen(false)} className={`flex min-h-11 items-center gap-3 rounded-xl px-3 py-3 text-[13px] font-medium ${active('/account') ? 'bg-sidebar-primary text-sidebar-primary-foreground' : 'text-sidebar-foreground/65 hover:bg-sidebar-accent hover:text-sidebar-foreground'}`} data-testid="link-nav-account"><UserRound size={17} />Mi cuenta</Link>
         </nav>
         <div className="mt-auto rounded-2xl border border-sidebar-border bg-sidebar-accent/70 p-4">
           <div className="mb-3 flex items-center gap-2">
@@ -57,7 +57,7 @@ export function AppShell({ children }: { children: ReactNode }) {
       {mobileOpen && <button className="fixed inset-0 z-30 bg-foreground/20 backdrop-blur-[2px] md:hidden" onClick={() => setMobileOpen(false)} aria-label="Cerrar menú" data-testid="button-overlay-menu" />}
       <div className="min-h-[100dvh] md:pl-[254px]">
         <header className="sticky top-0 z-20 flex h-[72px] items-center justify-between border-b border-border/70 bg-background/90 px-5 backdrop-blur-md md:px-10">
-          <button onClick={() => setMobileOpen(true)} className="rounded-lg p-2 hover:bg-muted md:hidden" aria-label="Abrir menú" data-testid="button-open-menu">
+          <button onClick={() => setMobileOpen(true)} className="flex h-11 w-11 items-center justify-center rounded-xl hover:bg-muted md:hidden" aria-label="Abrir menú" data-testid="button-open-menu">
             <span className="block h-[2px] w-5 bg-foreground shadow-[0_6px_0_hsl(var(--foreground)),0_-6px_0_hsl(var(--foreground))]" />
           </button>
           <div className="hidden md:block">
@@ -69,7 +69,7 @@ export function AppShell({ children }: { children: ReactNode }) {
              <Link href="/account" className="flex h-9 w-9 items-center justify-center rounded-full bg-secondary text-xs font-bold text-secondary-foreground" aria-label="Mi cuenta" data-testid="link-header-account">{user?.email.slice(0, 2).toUpperCase()}</Link>
           </div>
         </header>
-        <main className="px-5 py-7 md:px-10 md:py-9">{children}</main>
+        <main className="min-w-0 px-5 py-7 md:px-10 md:py-9">{children}</main>
       </div>
     </div>
   );

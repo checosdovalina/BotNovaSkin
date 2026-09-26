@@ -575,7 +575,7 @@ async function updateConversation(
 async function handoffConversation(
   id: number,
   values: Partial<typeof conversationsTable.$inferInsert>,
-): Promise<Conversation | undefined> {
+): Promise<{ conversation: Conversation | undefined; changed: boolean }> {
   // The database chooses the winner even when requests run in different processes.
   const [changed] = await db.update(conversationsTable)
     .set({ ...values, status: "human", updatedAt: new Date() })
@@ -583,11 +583,11 @@ async function handoffConversation(
     .returning();
   if (changed) {
     if (!changed.phone.startsWith("simulator:")) void notifyReceptionOfHandoff();
-    return changed;
+    return { conversation: changed, changed: true };
   }
   const [current] = await db.select().from(conversationsTable)
     .where(eq(conversationsTable.id, id));
-  return current;
+  return { conversation: current, changed: false };
 }
 
 async function transition(
@@ -598,12 +598,23 @@ async function transition(
   status: Conversation["status"] = conversation.status,
 ): Promise<BotReply> {
   const values = { state, context, lastMessageAt: new Date() };
-  const updated = status === "human"
-    ? await handoffConversation(conversation.id, values)
-    : await updateConversation(conversation.id, { ...values, status });
+  const handoff = status === "human"
+    ? await handoffConversation(conversation.id, values) : undefined;
+  const updated = handoff
+    ? handoff.conversation
+    : (await db.update(conversationsTable)
+        .set({ ...values, status, updatedAt: new Date() })
+        .where(and(eq(conversationsTable.id, conversation.id), eq(conversationsTable.status, "bot")))
+        .returning())[0];
+  if (!updated && status !== "human") {
+    const [current] = await db.select().from(conversationsTable)
+      .where(eq(conversationsTable.id, conversation.id));
+    if (!current) throw new Error("Conversation no longer exists");
+    return { reply: "", handoff: current.status === "human", state: current.state, conversationId: current.id };
+  }
   if (!updated) throw new Error("Conversation no longer exists");
   return {
-    reply,
+    reply: handoff && !handoff.changed ? "" : reply,
     handoff: updated.status === "human",
     state: updated.state,
     conversationId: updated.id,
@@ -1167,6 +1178,7 @@ export async function processConversationMessage(input: {
   phone: string;
   message: string;
   providerMessageId?: string;
+  providerTimestamp?: string;
   clientName?: string;
   unsupportedMedia?: boolean;
 }): Promise<BotReply> {
@@ -1192,12 +1204,18 @@ export async function processConversationMessage(input: {
     }
   }
 
+  const providerSeconds = Number(input.providerTimestamp);
+  const providerDate = input.providerMessageId && input.providerTimestamp &&
+    Number.isSafeInteger(providerSeconds) && providerSeconds > 0 &&
+    providerSeconds * 1000 <= Date.now() + 5 * 60 * 1000
+    ? new Date(providerSeconds * 1000) : undefined;
   await db.insert(conversationMessagesTable).values({
     conversationId: conversation.id,
     providerMessageId: input.providerMessageId,
     direction: "inbound",
     body: input.message,
     status: "received",
+    createdAt: providerDate,
   });
 
   conversation = await updateConversation(conversation.id, {
@@ -1536,7 +1554,7 @@ export async function processConversationMessage(input: {
     }
   }
 
-  if (result.reply) {
+  if (result.reply && (result.handoff || await isBotControlled(result.conversationId))) {
     await db.insert(conversationMessagesTable).values({
       conversationId: result.conversationId,
       direction: "outbound",
@@ -1545,6 +1563,12 @@ export async function processConversationMessage(input: {
     });
   }
   return result;
+}
+
+export async function isBotControlled(id: number) {
+  const [current] = await db.select({ status: conversationsTable.status })
+    .from(conversationsTable).where(eq(conversationsTable.id, id));
+  return current?.status === "bot";
 }
 
 export async function resetConversation(phone: string): Promise<void> {
@@ -1566,6 +1590,9 @@ export async function listConversations(status?: string) {
       phone: conversationsTable.phone,
       clientName: conversationsTable.clientName,
       status: conversationsTable.status,
+      isLead: conversationsTable.isLead,
+      leadNote: conversationsTable.leadNote,
+      followUpAt: conversationsTable.followUpAt,
       state: conversationsTable.state,
       lastMessage: conversationsTable.lastMessage,
       lastMessageAt: conversationsTable.lastMessageAt,
@@ -1588,11 +1615,32 @@ export async function listConversations(status?: string) {
     .orderBy(desc(conversationsTable.lastMessageAt));
 }
 
+export async function setConversationLead(
+  id: number,
+  data: { isLead: boolean; leadNote: string | null; followUpAt: Date | null },
+) {
+  const [updated] = await db.update(conversationsTable)
+    .set({
+      isLead: data.isLead,
+      leadNote: data.leadNote?.trim() || null,
+      followUpAt: data.followUpAt,
+      updatedAt: new Date(),
+    })
+    .where(eq(conversationsTable.id, id))
+    .returning({
+      id: conversationsTable.id,
+      isLead: conversationsTable.isLead,
+      leadNote: conversationsTable.leadNote,
+      followUpAt: conversationsTable.followUpAt,
+    });
+  return updated;
+}
+
 export async function setConversationStatus(
   id: number,
   status: "bot" | "human" | "closed",
 ) {
-  if (status === "human") return handoffConversation(id, {});
+  if (status === "human") return (await handoffConversation(id, {})).conversation;
   const [updated] = await db
     .update(conversationsTable)
     .set({
@@ -1633,9 +1681,6 @@ export async function sendReceptionReply(id: number, body: string) {
   const [conversation] = await db.select().from(conversationsTable)
     .where(eq(conversationsTable.id, id));
   if (!conversation) throw new ManualReplyError(404, "Conversación no encontrada");
-  if (conversation.status !== "human") {
-    throw new ManualReplyError(409, "Asigna la conversación a recepción antes de responder");
-  }
   if (conversation.phone.startsWith("simulator:")) {
     throw new ManualReplyError(409, "El simulador no puede enviar mensajes a WhatsApp");
   }
@@ -1653,6 +1698,14 @@ export async function sendReceptionReply(id: number, body: string) {
     .limit(1);
   if (!lastInbound || Date.now() - lastInbound.createdAt.getTime() >= 24 * 60 * 60 * 1000) {
     throw new ManualReplyError(409, "La ventana de 24 horas de WhatsApp terminó; no se puede enviar texto libre");
+  }
+  // Pause the bot before sending, independently of whether this contact is a lead.
+  // If Meta rejects the message the chat remains with reception so the bot cannot
+  // send an unexpected reply while a person retries.
+  if (conversation.status !== "human") {
+    await db.update(conversationsTable)
+      .set({ status: "human", updatedAt: new Date() })
+      .where(eq(conversationsTable.id, id));
   }
   const providerMessageId = await sendWhatsAppText(conversation.phone, body);
   if (!providerMessageId) throw new ManualReplyError(503, "WhatsApp no confirmó el envío");

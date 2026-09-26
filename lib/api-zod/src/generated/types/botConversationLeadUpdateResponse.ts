@@ -5,20 +5,12 @@
  * API para el panel del bot de citas de una estética
  * OpenAPI spec version: 0.1.0
  */
-import type { ConversationStatus } from './conversationStatus';
 
-export interface BotConversation {
+export interface BotConversationLeadUpdateResponse {
   id: number;
-  phone: string;
-  clientName: string | null;
-  status: ConversationStatus;
   isLead: boolean;
   /** @nullable */
   leadNote: string | null;
   /** @nullable */
   followUpAt: Date | null;
-  state: string;
-  lastMessage: string;
-  lastMessageAt: Date;
-  messageCount: number;
 }

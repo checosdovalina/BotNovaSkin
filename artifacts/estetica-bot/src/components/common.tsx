@@ -53,8 +53,8 @@ export function ErrorState({ onRetry, message = 'No pudimos cargar esta informac
 
 export function Modal({ title, description, onClose, children, wide = false }: { title: string; description?: string; onClose: () => void; children: ReactNode; wide?: boolean }) {
   return <div className="fixed inset-0 z-50 flex items-end justify-center bg-foreground/30 p-0 backdrop-blur-sm sm:items-center sm:p-5" role="dialog" aria-modal="true">
-    <div className={`max-h-[92vh] w-full overflow-y-auto rounded-t-[24px] bg-card p-6 shadow-2xl sm:rounded-[24px] ${wide ? 'max-w-2xl' : 'max-w-lg'}`}>
-      <div className="mb-6 flex items-start justify-between gap-4"><div><h2 className="serif text-2xl tracking-[-.02em]">{title}</h2>{description && <p className="mt-1 text-xs text-muted-foreground">{description}</p>}</div><button onClick={onClose} className="rounded-lg p-2 text-muted-foreground hover:bg-muted" aria-label="Cerrar" data-testid="button-close-dialog"><X size={17} /></button></div>
+      <div className={`max-h-[92vh] w-full overflow-y-auto rounded-t-[24px] bg-card p-5 shadow-2xl sm:rounded-[24px] sm:p-6 ${wide ? 'max-w-2xl' : 'max-w-lg'}`}>
+       <div className="mb-6 flex items-start justify-between gap-4"><div className="min-w-0"><h2 className="serif break-words text-2xl tracking-[-.02em]">{title}</h2>{description && <p className="mt-1 break-words text-xs text-muted-foreground">{description}</p>}</div><button onClick={onClose} className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl text-muted-foreground hover:bg-muted" aria-label="Cerrar" data-testid="button-close-dialog"><X size={17} /></button></div>
       {children}
     </div>
   </div>;

@@ -481,6 +481,30 @@ paths:
           $ref: "#/components/responses/BadRequest"
         "404":
           $ref: "#/components/responses/NotFound"
+  /bot/conversations/{id}/lead:
+    patch:
+      operationId: updateBotConversationLead
+      tags: [bot]
+      summary: Marcar un contacto como lead y guardar su seguimiento
+      parameters:
+        - $ref: "#/components/parameters/Id"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/BotConversationLeadUpdate"
+      responses:
+        "200":
+          description: Seguimiento actualizado
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BotConversationLeadUpdateResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "404":
+          $ref: "#/components/responses/NotFound"
   /bot/conversations/{id}/messages:
     get:
       operationId: listBotConversationMessages
@@ -525,7 +549,7 @@ paths:
         "404":
           $ref: "#/components/responses/NotFound"
         "409":
-          description: La conversación no está asignada a recepción
+          description: Fuera de la ventana de atención o conversación simulada
         "503":
           description: Canal no disponible o envío fallido
 components:
@@ -857,6 +881,13 @@ components:
           nullable: true
         status:
           $ref: "#/components/schemas/ConversationStatus"
+        isLead:
+          type: boolean
+        leadNote:
+          type: [string, "null"]
+        followUpAt:
+          type: [string, "null"]
+          format: date-time
         state:
           type: string
         lastMessage:
@@ -866,7 +897,7 @@ components:
           format: date-time
         messageCount:
           type: number
-      required: [id, phone, clientName, status, state, lastMessage, lastMessageAt, messageCount]
+      required: [id, phone, clientName, status, isLead, leadNote, followUpAt, state, lastMessage, lastMessageAt, messageCount]
     BotConversationUpdate:
       type: object
       properties:
@@ -881,6 +912,31 @@ components:
         status:
           $ref: "#/components/schemas/ConversationStatus"
       required: [id, status]
+    BotConversationLeadUpdate:
+      type: object
+      properties:
+        isLead:
+          type: boolean
+        leadNote:
+          type: [string, "null"]
+          maxLength: 2000
+        followUpAt:
+          type: [string, "null"]
+          format: date-time
+      required: [isLead, leadNote, followUpAt]
+    BotConversationLeadUpdateResponse:
+      type: object
+      properties:
+        id:
+          type: number
+        isLead:
+          type: boolean
+        leadNote:
+          type: [string, "null"]
+        followUpAt:
+          type: [string, "null"]
+          format: date-time
+      required: [id, isLead, leadNote, followUpAt]
     BotConversationMessage:
       type: object
       properties:
