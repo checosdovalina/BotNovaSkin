@@ -1,38 +1,7 @@
-import { createInterface, emitKeypressEvents } from "node:readline";
+import { createInterface } from "node:readline";
 import { db, localUsersTable } from "@workspace/db";
 import { hashPassword, isValidEmail, isValidPassword, newLocalUserId, normalizeEmail } from "../lib/local-auth";
-
-function hiddenPrompt(label: string): Promise<string> {
-  if (!process.stdin.isTTY || !process.stdin.setRawMode) {
-    throw new Error("Bootstrap must run in an interactive terminal.");
-  }
-  return new Promise((resolve, reject) => {
-    emitKeypressEvents(process.stdin);
-    process.stdin.setRawMode(true);
-    process.stdin.resume();
-    let value = "";
-    process.stdout.write(label);
-    const cleanup = () => {
-      process.stdin.off("keypress", onKeypress);
-      process.stdin.setRawMode(false);
-      process.stdout.write("\n");
-    };
-    const onKeypress = (text: string, key: { name?: string; ctrl?: boolean }) => {
-      if (key.ctrl && key.name === "c") {
-        cleanup();
-        reject(new Error("Bootstrap cancelled."));
-      } else if (key.name === "return" || key.name === "enter") {
-        cleanup();
-        resolve(value);
-      } else if (key.name === "backspace") {
-        value = value.slice(0, -1);
-      } else if (!key.ctrl && text) {
-        value += text;
-      }
-    };
-    process.stdin.on("keypress", onKeypress);
-  });
-}
+import { hiddenPrompt } from "./hidden-prompt";
 
 try {
   if (!process.stdin.isTTY || !process.stdin.setRawMode) {

@@ -9,6 +9,7 @@
     "start": "node --enable-source-maps ./dist/index.mjs",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "bootstrap-admin": "pnpm run build && node --enable-source-maps ./dist/bootstrap-admin.mjs",
+    "recover-admin": "pnpm run build && node --enable-source-maps ./dist/recover-admin.mjs",
     "test:reception-whatsapp": "node --test ./tests/reception-whatsapp.test.mjs",
     "test:auth": "node --test ./tests/local-auth.test.mjs",
     "test:concurrent-handoff": "node --test ./tests/concurrent-handoff.test.mjs"

@@ -44,6 +44,25 @@ sudo bash -c '
 
 La creación inicial se rechaza si ya existe una cuenta local. Después, el administrador inicia sesión en `/sign-in` y crea cuentas desde `/admin/users`. Nunca abrir un registro público ni compartir una sola cuenta entre varias personas.
 
+## Si aparece «Correo o contraseña incorrectos»
+
+Ese mensaje significa que la cuenta no existe en **la base de datos usada por la API de la VPS** o que la contraseña no coincide. Las credenciales del entorno de desarrollo no funcionan en la VPS. Tampoco basta con proponer un correo y contraseña en el chat: la cuenta tiene que crearse efectivamente en esa base de datos.
+
+Después de actualizar el repositorio y compilar la API, ejecuta desde la terminal de la VPS como administrador del sistema:
+
+```bash
+sudo bash -c '
+  set -a
+  . /etc/botnovaskin.env
+  set +a
+  sudo --preserve-env=DATABASE_URL -u "$(stat -c %U /opt/botnovaskin)" -H bash -lc "cd /opt/botnovaskin && node artifacts/api-server/dist/recover-admin.mjs"
+'
+```
+
+El comando muestra los correos de administradores activos. Si aún no hay cuentas, crea el primer administrador; si ya existe el administrador que selecciones, establece **una contraseña nueva** y cierra sus sesiones anteriores. Pide el correo y la contraseña dos veces directamente en la terminal; no los recibe por argumentos ni imprime la contraseña. Si existe otra cuenta pero no hay administradores activos, se detiene sin cambiar nada.
+
+Usa el correo exacto que muestre el comando. Si una contraseña anterior se compartió en un chat, no la reutilices: elige una nueva solo en la terminal de la VPS. Después inicia sesión en `/sign-in`. Si el comando falla por tabla inexistente, aplica primero el paso de esquema de esta guía; si falla por conexión, comprueba que el `DATABASE_URL` cargado sea el mismo que usa `botnovaskin-api`.
+
 Reiniciar y comprobar **la respuesta HTTP**, no solo `systemctl is-active`:
 
 ```bash

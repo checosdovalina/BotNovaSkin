@@ -1,6 +1,6 @@
 import { useState, type FormEvent } from 'react';
 import { Link, useLocation } from 'wouter';
-import { ArrowRight, LockKeyhole, ShieldCheck, Sparkles } from 'lucide-react';
+import { ArrowRight, LockKeyhole, ShieldCheck } from 'lucide-react';
 import { Button, Field, inputClass } from '@/components/common';
 import { useLocalAuth } from '@/components/auth-provider';
 
@@ -27,9 +27,9 @@ export default function SignIn() {
     <div className="relative flex min-h-[230px] flex-col justify-between overflow-hidden bg-sidebar p-7 text-sidebar-foreground sm:p-10 lg:min-h-[100dvh] lg:w-[46%] lg:p-14">
       <div className="pointer-events-none absolute -right-32 -top-40 h-[480px] w-[480px] rounded-full border border-sidebar-foreground/10" />
       <div className="pointer-events-none absolute -right-16 -top-28 h-[350px] w-[350px] rounded-full border border-sidebar-foreground/10" />
-      <Link href="/" className="relative inline-flex w-fit items-center gap-3" data-testid="link-brand">
-        <span className="flex h-11 w-11 items-center justify-center rounded-2xl bg-sidebar-primary text-sidebar-primary-foreground"><Sparkles size={21} /></span>
-        <span className="serif text-[26px] tracking-tight">estética</span>
+      <Link href="/" className="relative inline-flex w-fit items-center gap-3.5" aria-label="NOVA SKIN MED — inicio" data-testid="link-brand">
+        <img src="/novaskin-mark.png" alt="" width="30" height="43" className="h-11 w-auto shrink-0 object-contain" />
+        <span className="text-[16px] font-semibold uppercase leading-none tracking-[.11em] sm:text-[18px]">NOVA SKIN MED</span>
       </Link>
       <div className="relative hidden max-w-md lg:block">
         <p className="mb-5 text-[11px] font-bold uppercase tracking-[.25em] text-sidebar-primary">Torreón · recepción</p>

@@ -5,3 +5,4 @@
 - [Acceso de recepción](reception-access.md) — en la VPS, solo cuentas locales activas creadas por un administrador autorizan el historial; no abrir autorregistro ni reutilizar IDs de Clerk.
 - [Avisos push de recepción](reception-push.md) — mantener la clave VAPID estable y verificar autorización al enviar; el aviso del sistema no debe contener datos de clientes.
 - [Subidas a GitHub](github-git-auth.md) — la conexión GitHub de Replit permite API, pero no autentica el comando git push de la terminal.
+- [CLI de mantenimiento en VPS](vps-cli-runtime.md) — compilar no basta: ejecutar los bundles de Node antes de recomendar comandos para crear o recuperar cuentas.

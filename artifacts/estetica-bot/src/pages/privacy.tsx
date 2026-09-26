@@ -107,7 +107,7 @@ export default function Privacy() {
     const previousTitle = document.title;
     const description = document.querySelector<HTMLMetaElement>('meta[name="description"]');
     const previousDescription = description?.content;
-    document.title = 'Política de privacidad | NovaSkin';
+    document.title = 'Política de privacidad | NOVA SKIN MED';
     description?.setAttribute(
       'content',
       'Política de privacidad de NovaSkin para el servicio de citas y atención mediante WhatsApp.',
@@ -122,12 +122,12 @@ export default function Privacy() {
     <div className="noise min-h-[100dvh] bg-background">
       <header className="border-b border-border/70 bg-card/85 backdrop-blur">
         <div className="mx-auto flex max-w-5xl items-center justify-between px-5 py-5 sm:px-8">
-          <a href="./" className="flex items-center gap-3" aria-label="NovaSkin">
-            <span className="flex h-11 w-11 items-center justify-center rounded-2xl border border-primary/25 bg-secondary text-xl font-semibold text-primary">
-              N
+          <a href="./" className="flex items-center gap-3" aria-label="NOVA SKIN MED — inicio">
+            <span className="flex h-12 w-11 shrink-0 items-center justify-center rounded-xl bg-sidebar">
+              <img src="/novaskin-mark.png" alt="" width="25" height="36" className="h-9 w-auto object-contain" />
             </span>
             <span>
-              <span className="serif block text-xl font-semibold leading-none">NovaSkin</span>
+              <span className="block text-[15px] font-semibold uppercase leading-none tracking-[.1em]">NOVA SKIN MED</span>
               <span className="mt-1 block text-[10px] font-semibold uppercase tracking-[.2em] text-muted-foreground">
                 Torreón, Coahuila
               </span>

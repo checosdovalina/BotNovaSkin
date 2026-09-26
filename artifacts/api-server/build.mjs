@@ -9,6 +9,14 @@ import { rm } from "node:fs/promises";
 globalThis.require = createRequire(import.meta.url);
 
 const artifactDir = path.dirname(fileURLToPath(import.meta.url));
+const nodeBundleBanner = `import { createRequire as __bannerCrReq } from 'node:module';
+import __bannerPath from 'node:path';
+import __bannerUrl from 'node:url';
+
+globalThis.require = __bannerCrReq(import.meta.url);
+globalThis.__filename = __bannerUrl.fileURLToPath(import.meta.url);
+globalThis.__dirname = __bannerPath.dirname(globalThis.__filename);
+`;
 
 async function buildAll() {
   const distDir = path.resolve(artifactDir, "dist");
@@ -107,16 +115,7 @@ async function buildAll() {
       esbuildPluginPino({ transports: ["pino-pretty"] })
     ],
     // Make sure packages that are cjs only (e.g. express) but are bundled continue to work in our esm output file
-    banner: {
-      js: `import { createRequire as __bannerCrReq } from 'node:module';
-import __bannerPath from 'node:path';
-import __bannerUrl from 'node:url';
-
-globalThis.require = __bannerCrReq(import.meta.url);
-globalThis.__filename = __bannerUrl.fileURLToPath(import.meta.url);
-globalThis.__dirname = __bannerPath.dirname(globalThis.__filename);
-    `,
-    },
+    banner: { js: nodeBundleBanner },
   });
   await esbuild({
     entryPoints: [path.resolve(artifactDir, "src/cli/bootstrap-admin.ts")],
@@ -127,6 +126,18 @@ globalThis.__dirname = __bannerPath.dirname(globalThis.__filename);
     logLevel: "info",
     external: ["pg-native"],
     sourcemap: "linked",
+    banner: { js: nodeBundleBanner },
+  });
+  await esbuild({
+    entryPoints: [path.resolve(artifactDir, "src/cli/recover-admin.ts")],
+    platform: "node",
+    bundle: true,
+    format: "esm",
+    outfile: path.resolve(distDir, "recover-admin.mjs"),
+    logLevel: "info",
+    external: ["pg-native"],
+    sourcemap: "linked",
+    banner: { js: nodeBundleBanner },
   });
 }
 

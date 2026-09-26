@@ -1,4 +1,4 @@
-import { CalendarDays, ChevronRight, CircleHelp, LayoutDashboard, MessageCircle, MessagesSquare, Scissors, Sparkles, X, UserRound, UsersRound } from 'lucide-react';
+import { CalendarDays, ChevronRight, CircleHelp, LayoutDashboard, MessageCircle, MessagesSquare, Scissors, X, UserRound, UsersRound } from 'lucide-react';
 import { Link, useLocation } from 'wouter';
 import { useState, type ReactNode } from 'react';
 import { useLocalAuth } from '@/components/auth-provider';
@@ -22,13 +22,11 @@ export function AppShell({ children }: { children: ReactNode }) {
     <div className="noise min-h-[100dvh] bg-background">
       <aside className={`fixed inset-y-0 left-0 z-40 flex w-[254px] flex-col bg-sidebar px-4 py-5 text-sidebar-foreground transition-transform duration-300 md:translate-x-0 ${mobileOpen ? 'translate-x-0' : '-translate-x-full'}`}>
         <div className="mb-10 flex items-center justify-between px-3">
-          <Link href="/" className="flex items-center gap-3" data-testid="link-brand">
-            <span className="flex h-10 w-10 items-center justify-center rounded-[14px] bg-sidebar-primary text-sidebar-primary-foreground shadow-sm">
-              <Sparkles size={19} strokeWidth={1.8} />
-            </span>
+          <Link href="/" className="flex min-w-0 items-center gap-3" aria-label="NOVA SKIN MED — inicio" data-testid="link-brand">
+            <img src="/novaskin-mark.png" alt="" width="27" height="38" className="h-10 w-auto shrink-0 object-contain" />
             <span>
-              <span className="serif block text-[21px] leading-none tracking-[-.02em]">estética</span>
-              <span className="mt-1 block text-[9px] font-semibold uppercase tracking-[.24em] opacity-60">Torreón · staff</span>
+              <span className="block whitespace-nowrap text-[13px] font-semibold uppercase leading-none tracking-[.095em]">NOVA SKIN MED</span>
+              <span className="mt-1.5 block text-[9px] font-semibold uppercase tracking-[.2em] opacity-60">Torreón · recepción</span>
             </span>
           </Link>
           <button onClick={() => setMobileOpen(false)} className="rounded-lg p-2 opacity-70 hover:bg-sidebar-accent md:hidden" aria-label="Cerrar menú" data-testid="button-close-menu">
