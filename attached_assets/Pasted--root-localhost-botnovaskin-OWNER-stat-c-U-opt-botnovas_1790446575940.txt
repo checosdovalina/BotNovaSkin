@@ -1,0 +1,68 @@
+[root@localhost botnovaskin]# OWNER=$(stat -c '%U' /opt/botnovaskin)
+sudo -u "$OWNER" -H bash -lc 'cd /opt/botnovaskin && corepack pnpm@10.26.1 install --frozen-lockfile && corepack pnpm@10.26.1 --filter @workspace/api-server run build' &&
+sudo systemctl restart botnovaskin-api &&
+sleep 3 &&
+curl -i --max-time 5 http://127.0.0.1:5100/api/healthz
+Scope: all 9 workspace projects
+Lockfile is up to date, resolution step is skipped
+Packages: +31
++++++++++++++++++++++++++++++++
+
+   ╭──────────────────────────────────────────────╮
+   │                                              │
+   │     Update available! 10.26.1 → 12.6.0.      │
+   │     Changelog: https://pnpm.io/v/12.6.0      │
+   │   To update, run: corepack use pnpm@12.6.0   │
+   │                                              │
+   ╰──────────────────────────────────────────────╯
+
+Progress: resolved 31, reused 0, downloaded 31, added 31, done
+. preinstall$ sh -c 'rm -f package-lock.json yarn.lock; case "$npm_config_user_agent" in pnpm/*) ;; *) ech…
+└─ Done in 17ms
+╭ Warning ───────────────────────────────────────────────────────────────────────────────────╮
+│                                                                                            │
+│   Ignored build scripts: @clerk/shared@3.48.0.                                             │
+│   Run "pnpm approve-builds" to pick which dependencies should be allowed to run scripts.   │
+│                                                                                            │
+╰────────────────────────────────────────────────────────────────────────────────────────────╯
+Done in 2.6s using pnpm v10.26.1
+
+> @workspace/api-server@0.0.0 build /opt/botnovaskin/artifacts/api-server
+> node ./build.mjs
+
+
+  dist/index.mjs                       3.0mb ⚠️
+  dist/pino-worker.mjs               153.4kb
+  dist/pino-file.mjs                 142.0kb
+  dist/pino-pretty.mjs               114.4kb
+  dist/thread-stream-worker.mjs        7.3kb
+  dist/index.mjs.map                   5.5mb
+  dist/pino-worker.mjs.map           256.9kb
+  dist/pino-file.mjs.map             229.0kb
+  dist/pino-pretty.mjs.map           203.6kb
+  dist/thread-stream-worker.mjs.map   12.0kb
+
+⚡ Done in 374ms
+HTTP/1.1 500 Internal Server Error
+X-Powered-By: Express
+Vary: Origin
+Access-Control-Allow-Credentials: true
+Content-Security-Policy: default-src 'none'
+X-Content-Type-Options: nosniff
+Content-Type: text/html; charset=utf-8
+Content-Length: 148
+Date: Sat, 26 Sep 2026 18:15:35 GMT
+Connection: keep-alive
+Keep-Alive: timeout=5
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Error</title>
+</head>
+<body>
+<pre>Internal Server Error</pre>
+</body>
+</html>
+[root@localhost botnovaskin]# 
