@@ -5,6 +5,7 @@ import {
   eq,
   gte,
   inArray,
+  lte,
   ne,
   sql,
 } from "drizzle-orm";
@@ -46,6 +47,34 @@ const menu = [
   "5. Hablar con recepción",
   "6. Preguntas generales",
 ].join("\n");
+
+const receptionInactivityMs = 24 * 60 * 60 * 1000;
+
+function receptionCutoff(now = new Date()): Date {
+  return new Date(now.getTime() - receptionInactivityMs);
+}
+
+function resumedBotValues() {
+  return {
+    status: "bot" as const,
+    state: "idle" as const,
+    context: {},
+    updatedAt: new Date(),
+  };
+}
+
+// Conditional updates avoid reverting a chat that received a new message
+// while the timeout worker was checking it.
+export async function resumeInactiveReceptionConversations(): Promise<number> {
+  const resumed = await db.update(conversationsTable)
+    .set(resumedBotValues())
+    .where(and(
+      eq(conversationsTable.status, "human"),
+      lte(conversationsTable.lastMessageAt, receptionCutoff()),
+    ))
+    .returning({ id: conversationsTable.id });
+  return resumed.length;
+}
 
 const medicalKeywords = [
   "embaraz",
@@ -1202,6 +1231,21 @@ export async function processConversationMessage(input: {
         conversationId: conversation.id,
       };
     }
+  }
+
+  // The periodic worker may not have run yet when the first new message arrives.
+  // Reopen an inactive chat before handling that message so the bot can answer it.
+  if (conversation.status === "human" &&
+      conversation.lastMessageAt.getTime() <= receptionCutoff().getTime()) {
+    const [resumed] = await db.update(conversationsTable)
+      .set(resumedBotValues())
+      .where(and(
+        eq(conversationsTable.id, conversation.id),
+        eq(conversationsTable.status, "human"),
+        lte(conversationsTable.lastMessageAt, receptionCutoff()),
+      ))
+      .returning();
+    conversation = resumed ?? await getConversation(input.phone);
   }
 
   const providerSeconds = Number(input.providerTimestamp);

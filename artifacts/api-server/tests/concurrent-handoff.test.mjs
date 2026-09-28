@@ -10,13 +10,14 @@ const modules = {
   "drizzle-orm": `
     export const eq = (key, value) => (row) => row[key] === value;
     export const ne = (key, value) => (row) => row[key] !== value;
+    export const lte = (key, value) => (row) => row[key] <= value;
     export const and = (...conditions) => (row) => conditions.every((condition) => condition(row));
     export const asc = () => {}; export const desc = () => {};
     export const gte = () => {}; export const inArray = () => {};
     export const sql = () => {};
   `,
   "@workspace/db": `
-    export const conversationsTable = { id: "id", phone: "phone", status: "status" };
+    export const conversationsTable = { id: "id", phone: "phone", status: "status", lastMessageAt: "lastMessageAt" };
     export const conversationMessagesTable = { id: "id", providerMessageId: "providerMessageId" };
     export const appointmentsTable = {}; export const faqsTable = {};
     export const servicesTable = {};
@@ -80,6 +81,7 @@ const modules = {
 let directory;
 let processConversationMessage;
 let setConversationStatus;
+let resumeInactiveReceptionConversations;
 
 before(async () => {
   directory = await mkdtemp(join(tmpdir(), "concurrent-handoff-"));
@@ -102,7 +104,7 @@ before(async () => {
       },
     }],
   });
-  ({ processConversationMessage, setConversationStatus } = await import(pathToFileURL(outfile).href));
+  ({ processConversationMessage, setConversationStatus, resumeInactiveReceptionConversations } = await import(pathToFileURL(outfile).href));
 });
 
 after(async () => {
@@ -117,7 +119,7 @@ function setup(phone = "5215550000000") {
   const state = {
     conversation: {
       id: 1, phone, status: "bot", state: "idle", context: {},
-      lastMessage: "", clientName: null,
+      lastMessage: "", clientName: null, lastMessageAt: new Date(),
     },
     messages: [],
     notices: 0,
@@ -159,4 +161,34 @@ test("a bot and a manual handoff racing produce one reception notice", async () 
   ]);
   assert.equal(state.arrivals, 2);
   assert.equal(state.notices, 1);
+});
+
+test("an inactive reception chat returns to the bot and answers the next message", async () => {
+  const state = setup();
+  state.conversation.status = "human";
+  state.conversation.lastMessageAt = new Date(Date.now() - 24 * 60 * 60 * 1000 - 1000);
+  const result = await processConversationMessage({ phone: state.conversation.phone, message: "hola" });
+  assert.equal(state.conversation.status, "bot");
+  assert.match(result.reply, /asistente de NovaSkin/);
+});
+
+test("each inbound message keeps an active reception chat in human mode", async () => {
+  const state = setup();
+  state.conversation.status = "human";
+  state.conversation.lastMessageAt = new Date(Date.now() - 23 * 60 * 60 * 1000);
+  const result = await processConversationMessage({ phone: state.conversation.phone, message: "hola" });
+  assert.equal(result.reply, "");
+  assert.equal(state.conversation.status, "human");
+  assert.ok(state.conversation.lastMessageAt.getTime() > Date.now() - 60_000);
+  assert.equal(await resumeInactiveReceptionConversations(), 0);
+});
+
+test("the background check returns only reception chats idle for twenty-four hours", async () => {
+  const state = setup();
+  state.conversation.status = "human";
+  state.conversation.lastMessageAt = new Date(Date.now() - 24 * 60 * 60 * 1000 - 1000);
+  assert.equal(await resumeInactiveReceptionConversations(), 1);
+  assert.equal(state.conversation.status, "bot");
+  assert.equal(state.conversation.state, "idle");
+  assert.equal(await resumeInactiveReceptionConversations(), 0);
 });

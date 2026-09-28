@@ -3,6 +3,7 @@ import { logger } from "./lib/logger";
 import { seedDatabase } from "./lib/seed";
 import { aiConfigured } from "./lib/ai-assistant";
 import { startAppointmentReminderWorker } from "./lib/appointment-reminders";
+import { startReceptionTimeoutWorker } from "./lib/reception-timeout";
 
 const rawPort = process.env["PORT"];
 
@@ -20,6 +21,7 @@ if (Number.isNaN(port) || port <= 0) {
 
 await seedDatabase();
 startAppointmentReminderWorker();
+startReceptionTimeoutWorker();
 logger.info(
   { aiConfigured: aiConfigured() },
   "AI assistant configuration loaded",
