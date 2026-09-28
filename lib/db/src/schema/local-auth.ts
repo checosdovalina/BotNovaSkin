@@ -6,7 +6,7 @@ export const localUsersTable = pgTable("local_users", {
   id: text("id").primaryKey(),
   email: text("email").notNull(),
   passwordHash: text("password_hash").notNull(),
-  role: text("role", { enum: ["admin", "staff"] }).notNull(),
+  role: text("role", { enum: ["staff", "admin", "superadmin"] }).notNull(),
   active: boolean("active").notNull().default(true),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow().$onUpdate(() => new Date()),

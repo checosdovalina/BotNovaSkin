@@ -139,6 +139,17 @@ async function buildAll() {
     sourcemap: "linked",
     banner: { js: nodeBundleBanner },
   });
+  await esbuild({
+    entryPoints: [path.resolve(artifactDir, "src/cli/promote-superadmin.ts")],
+    platform: "node",
+    bundle: true,
+    format: "esm",
+    outfile: path.resolve(distDir, "promote-superadmin.mjs"),
+    logLevel: "info",
+    external: ["pg-native"],
+    sourcemap: "linked",
+    banner: { js: nodeBundleBanner },
+  });
 }
 
 buildAll().catch((err) => {

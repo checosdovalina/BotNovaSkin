@@ -7,8 +7,19 @@ const SESSION_COOKIE = "vps_session";
 export const SESSION_LIFETIME_MS = 30 * 24 * 60 * 60 * 1000;
 const PASSWORD_BYTES = 64;
 
-export type LocalRole = "admin" | "staff";
+export type LocalRole = "staff" | "admin" | "superadmin";
 export type PublicUser = { id: string; email: string; role: LocalRole };
+
+export function canCreateLocalRole(actor: LocalRole, requested: unknown): requested is "staff" | "admin" {
+  if (requested === "staff") return actor === "admin" || actor === "superadmin";
+  return requested === "admin" && actor === "superadmin";
+}
+
+export function canManageLocalRole(actor: LocalRole, target: LocalRole): boolean {
+  if (target === "superadmin") return false;
+  if (actor === "superadmin") return target === "staff" || target === "admin";
+  return actor === "admin" && target === "staff";
+}
 
 declare global {
   namespace Express {
@@ -155,6 +166,20 @@ export const requireLocalAuth: RequestHandler = async (req, res, next) => {
     res.status(503).json({ error: "No se pudo comprobar la sesión" });
   }
 };
+
+export function requireRole(...roles: LocalRole[]): RequestHandler {
+  return (req, res, next) => {
+    if (!req.localUser) {
+      res.status(401).json({ error: "Inicia sesión para continuar" });
+      return;
+    }
+    if (!roles.includes(req.localUser.role)) {
+      res.status(403).json({ error: "No tienes permisos para realizar esta acción" });
+      return;
+    }
+    next();
+  };
+}
 
 export const optionalLocalAuth: RequestHandler = async (req, res, next) => {
   const token = readSessionToken(req);

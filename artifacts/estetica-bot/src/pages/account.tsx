@@ -6,6 +6,7 @@ import { Button, PageHeader } from '@/components/common';
 import { PasswordField } from '@/components/password-field';
 import { useLocalAuth } from '@/components/auth-provider';
 import { authApi } from '@/lib/local-auth';
+import { roleLabel } from '@/lib/local-auth';
 
 export default function Account() {
   const { user, logout, endSession, refresh } = useLocalAuth();
@@ -42,7 +43,8 @@ export default function Account() {
         <span className="flex h-12 w-12 items-center justify-center rounded-2xl bg-secondary text-primary"><ShieldCheck size={22} /></span>
         <h2 className="serif mt-5 text-2xl">Tu acceso</h2>
         <p className="mt-2 break-all text-sm font-semibold" data-testid="text-account-email">{user?.email}</p>
-        <p className="mt-1 text-xs text-muted-foreground">{user?.role === 'admin' ? 'Administración' : 'Equipo de recepción'}</p>
+        <p className="mt-1 text-xs text-muted-foreground">{roleLabel(user?.role)}</p>
+        <p className="mt-3 text-xs leading-relaxed text-muted-foreground">{user?.role === 'staff' ? 'Puedes atender conversaciones y gestionar citas. La configuración del bot y del equipo está protegida.' : user?.role === 'admin' ? 'Puedes gestionar la atención, los tratamientos, las respuestas del bot y los accesos de recepción.' : 'Puedes gestionar los accesos de administración y consultar la configuración del canal.'}</p>
         <div className="mt-7 border-t border-border pt-5"><Button variant="secondary" onClick={() => void exit()} data-testid="button-logout"><LogOut size={16} />Cerrar sesión</Button></div>
       </section>
       <section className="surface rounded-[22px] p-6 sm:p-7">

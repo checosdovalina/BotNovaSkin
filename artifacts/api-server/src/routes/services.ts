@@ -1,5 +1,6 @@
 import { eq } from "drizzle-orm";
 import { Router, type IRouter } from "express";
+import { requireRole } from "../lib/local-auth";
 import { db, servicesTable } from "@workspace/db";
 import {
   CreateServiceBody,
@@ -22,7 +23,7 @@ router.get("/services", async (req, res): Promise<void> => {
   res.json(ListServicesResponse.parse(services));
 });
 
-router.post("/services", async (req, res): Promise<void> => {
+router.post("/services", requireRole("admin", "superadmin"), async (req, res): Promise<void> => {
   const parsed = CreateServiceBody.safeParse(req.body);
   if (!parsed.success) {
     res.status(400).json({ error: parsed.error.message });
@@ -36,7 +37,7 @@ router.post("/services", async (req, res): Promise<void> => {
   res.status(201).json(CreateServiceResponse.parse(service));
 });
 
-router.patch("/services/:id", async (req, res): Promise<void> => {
+router.patch("/services/:id", requireRole("admin", "superadmin"), async (req, res): Promise<void> => {
   const params = UpdateServiceParams.safeParse(req.params);
   const body = UpdateServiceBody.safeParse(req.body);
   if (!params.success) {
@@ -60,7 +61,7 @@ router.patch("/services/:id", async (req, res): Promise<void> => {
   res.json(UpdateServiceResponse.parse(service));
 });
 
-router.delete("/services/:id", async (req, res): Promise<void> => {
+router.delete("/services/:id", requireRole("admin", "superadmin"), async (req, res): Promise<void> => {
   const params = DeleteServiceParams.safeParse(req.params);
   if (!params.success) {
     res.status(400).json({ error: params.error.message });

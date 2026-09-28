@@ -6,7 +6,7 @@ import { getGetBotStatusQueryKey, getHealthCheckQueryKey, getListBotConversation
 import { AppShell } from '@/components/shell';
 import { Button, ErrorState, PageHeader, inputClass } from '@/components/common';
 import { useToast } from '@/hooks/use-toast';
-import { BotInbox } from './bot-inbox';
+import { useLocalAuth } from '@/components/auth-provider';
 
 type Message = { from: 'bot' | 'client'; text: string };
 const initialMessages: Message[] = [{ from: 'bot', text: 'Escribe “hola” para iniciar una conversación nueva con el motor real del bot.' }];
@@ -41,8 +41,10 @@ function CopyField({ label, value, onCopy, secondary = false }: { label: string;
 }
 
 export default function Bot() {
+  const { user } = useLocalAuth();
+  const isSuperadmin = user?.role === 'superadmin';
   const queryClient = useQueryClient();
-  const status = useGetBotStatus({ query: { queryKey: getGetBotStatusQueryKey(), refetchInterval: 15000 } });
+  const status = useGetBotStatus({ query: { queryKey: getGetBotStatusQueryKey(), enabled: isSuperadmin, refetchInterval: isSuperadmin ? 15000 : false } });
   const health = useHealthCheck({ query: { queryKey: getHealthCheckQueryKey() } });
   const faqs = useListFaqs(undefined, { query: { queryKey: getListFaqsQueryKey(undefined) } });
   const simulate = useSimulateBot();
@@ -58,8 +60,8 @@ export default function Bot() {
   const webhookReady = Boolean(bot?.webhookReady) || manualSteps.webhook;
   const steps = [
     { id: 'meta', done: manualSteps.meta, title: 'Prepara la cuenta en Meta', description: 'Crea o selecciona tu aplicación, agrega WhatsApp y confirma que el número de atención esté listo para Cloud API.' },
-    { id: 'replit', done: manualSteps.deploy, title: 'Publica la app en Replit', description: 'La integración necesita una URL pública y estable. Comprueba que el servicio esté desplegado antes de registrarlo en Meta.' },
-    { id: 'secrets', done: manualSteps.secrets, title: 'Guarda los secretos en Replit', description: 'Añade las variables en Secrets de Replit. Aquí solo usamos nombres de variables: los valores nunca deben viajar por el chat.' },
+    { id: 'vps', done: manualSteps.deploy, title: 'Comprueba el servicio en la VPS', description: 'El servicio debe responder en la dirección pública de la VPS antes de registrarlo en Meta.' },
+    { id: 'secrets', done: manualSteps.secrets, title: 'Configura las variables en la VPS', description: 'Solo la persona encargada del servidor debe gestionar estas variables en el entorno seguro. Nunca introduzcas sus valores aquí.' },
     { id: 'webhook', done: webhookReady, title: 'Configura y verifica el webhook', description: 'Usa la URL de abajo en la configuración de Meta y completa la verificación con tu token guardado en Secrets.' },
     { id: 'subscription', done: manualSteps.subscription, title: 'Suscribe los mensajes', description: 'En los campos del webhook de Meta, activa el evento messages para que el bot pueda recibir nuevas conversaciones.' },
     { id: 'test', done: finalTested, title: 'Haz la prueba final', description: 'Confirma que el webhook responde y revisa el tono del bot en el simulador antes de activar el canal.' },
@@ -81,8 +83,8 @@ export default function Bot() {
   };
   const toggleStep = (id: 'meta' | 'deploy' | 'secrets' | 'webhook' | 'subscription') => setManualSteps((current) => ({ ...current, [id]: !current[id] }));
   const refreshAll = async () => {
-    await Promise.all([status.refetch(), health.refetch(), faqs.refetch()]);
-    toast({ title: 'Estado actualizado', description: 'Comprobamos de nuevo la conexión y la configuración.' });
+    await Promise.all([...(isSuperadmin ? [status.refetch()] : []), health.refetch(), faqs.refetch()]);
+    toast({ title: 'Estado actualizado', description: isSuperadmin ? 'Comprobamos de nuevo la conexión y la configuración.' : 'Comprobamos de nuevo las respuestas del bot.' });
   };
   const send = async () => {
     const value = draft.trim();
@@ -109,10 +111,9 @@ export default function Bot() {
   };
 
   return <AppShell>
-    <PageHeader eyebrow="Canal de atención · Meta Cloud API" title="Conexión WhatsApp" description="Acompaña cada conversación sin perder el contexto. La configuración y el simulador siguen disponibles más abajo." action={<div className="flex flex-wrap gap-2"><Button variant="secondary" onClick={() => void refreshAll()} disabled={status.isFetching || health.isFetching} data-testid="button-refresh-bot"><RefreshCw size={15} className={status.isFetching ? 'animate-spin' : ''} />Actualizar estado</Button><Link href="/account" className="inline-flex h-10 items-center gap-2 rounded-xl bg-secondary px-4 text-[13px] font-semibold text-secondary-foreground" data-testid="link-bot-account"><LogOut size={15} />Mi cuenta</Link></div>} />
+    <PageHeader eyebrow={isSuperadmin ? 'Canal de atención · Meta Cloud API' : 'Administración · calidad'} title={isSuperadmin ? 'Conexión WhatsApp' : 'Pruebas del bot'} description={isSuperadmin ? 'Consulta la configuración técnica del canal. Para responder mensajes, entra a Conversaciones.' : 'Prueba las respuestas antes de cambiar el contenido aprobado. Este simulador no envía mensajes a clientes.'} action={<div className="flex flex-wrap gap-2"><Button variant="secondary" onClick={() => void refreshAll()} disabled={status.isFetching || health.isFetching} data-testid="button-refresh-bot"><RefreshCw size={15} className={status.isFetching ? 'animate-spin' : ''} />Actualizar estado</Button><Link href="/account" className="inline-flex h-10 items-center gap-2 rounded-xl bg-secondary px-4 text-[13px] font-semibold text-secondary-foreground" data-testid="link-bot-account"><LogOut size={15} />Mi cuenta</Link></div>} />
 
-    <BotInbox connected={Boolean(bot?.connected)} connectionLoading={status.isLoading} connectionError={status.isError} />
-
+    {isSuperadmin && <>
     <section className="relative isolate overflow-hidden rounded-[26px] bg-primary px-5 py-6 text-primary-foreground shadow-[0_18px_40px_hsl(166_24%_20%/.12)] sm:px-7 sm:py-7">
       <div className="pointer-events-none absolute -right-16 -top-24 h-64 w-64 rounded-full border border-primary-foreground/10" /><div className="pointer-events-none absolute -right-2 -top-10 h-40 w-40 rounded-full border border-primary-foreground/10" />
       <div className="relative flex flex-col gap-7 lg:flex-row lg:items-end lg:justify-between">
@@ -145,16 +146,15 @@ export default function Bot() {
               <div className={`flex items-center gap-2 rounded-lg px-2.5 py-1.5 text-xs ${health.isError ? 'bg-destructive/10 text-destructive' : healthReady ? 'bg-primary/10 text-primary' : 'bg-muted text-muted-foreground'}`}><span className={`h-1.5 w-1.5 rounded-full ${healthReady ? 'bg-primary' : health.isError ? 'bg-destructive' : 'bg-muted-foreground/40'}`} />{health.isLoading ? 'Comprobando servicio' : health.isError ? 'No pudimos comprobarlo' : healthReady ? 'API operativa' : 'Esperando respuesta del servicio'}</div>
               <Button variant="ghost" className="h-9 px-3 text-xs" onClick={() => toggleStep('deploy')} data-testid="button-toggle-deploy">{manualSteps.deploy ? 'Marcar como pendiente' : 'Ya publiqué la app'}</Button>
               {health.isError && <Button variant="ghost" className="h-9 px-3 text-xs" onClick={() => void health.refetch()} data-testid="button-retry-health"><RefreshCw size={14} />Reintentar</Button>}
-              <a href="https://docs.replit.com/hosting/deployments" target="_blank" rel="noreferrer" className="inline-flex items-center gap-1.5 text-xs font-semibold text-primary hover:underline" data-testid="link-replit-docs">Guía de despliegue <ExternalLink size={13} /></a>
             </div>
           </StepCard>
 
           <StepCard number="3" icon={<FileKey2 size={18} />} title={steps[2].title} description={steps[2].description} done={steps[2].done}>
             <div className="rounded-xl border border-accent/45 bg-accent/10 p-3.5">
-              <div className="flex items-start gap-2.5"><ShieldAlert size={16} className="mt-0.5 shrink-0 text-[hsl(32_44%_30%)]" /><p className="text-xs leading-relaxed text-[hsl(32_44%_30%)]"><strong>Importante:</strong> nunca pegues valores de tokens, claves o secretos en este chat ni en el código. Guárdalos únicamente en <strong>Replit → Secrets</strong>.</p></div>
+               <div className="flex items-start gap-2.5"><ShieldAlert size={16} className="mt-0.5 shrink-0 text-[hsl(32_44%_30%)]" /><p className="text-xs leading-relaxed text-[hsl(32_44%_30%)]"><strong>Importante:</strong> nunca pegues tokens, claves o secretos en el chat ni en este panel. El responsable del servidor debe gestionarlos en el entorno de la VPS.</p></div>
               <div className="mt-3 flex flex-wrap gap-2">{['WHATSAPP_ACCESS_TOKEN', 'WHATSAPP_VERIFY_TOKEN', 'WHATSAPP_PHONE_NUMBER_ID', 'WHATSAPP_BUSINESS_ACCOUNT_ID', 'META_APP_SECRET'].map((name) => <code key={name} className="rounded-md bg-background/70 px-2 py-1 text-[10px] text-muted-foreground">{name}</code>)}</div>
             </div>
-            <Button variant="ghost" className="mt-3 h-9 px-3 text-xs" onClick={() => toggleStep('secrets')} data-testid="button-toggle-secrets">{manualSteps.secrets ? 'Marcar como pendiente' : 'Ya guardé los secretos en Replit'}</Button>
+             <Button variant="ghost" className="mt-3 h-9 px-3 text-xs" onClick={() => toggleStep('secrets')} data-testid="button-toggle-secrets">{manualSteps.secrets ? 'Marcar como pendiente' : 'La VPS ya tiene las variables'}</Button>
           </StepCard>
 
           <StepCard number="4" icon={<Code2 size={18} />} title={steps[3].title} description={steps[3].description} done={steps[3].done}>
@@ -202,25 +202,26 @@ export default function Bot() {
         </section>
 
         <section className="rounded-[22px] border border-accent/45 bg-accent/10 p-5">
-          <div className="flex items-start gap-3"><ShieldAlert size={18} className="mt-0.5 shrink-0 text-[hsl(32_44%_30%)]" /><div><h2 className="text-sm font-semibold text-[hsl(32_44%_25%)]">Protege tus credenciales</h2><p className="mt-1.5 text-xs leading-relaxed text-[hsl(32_44%_30%)]">Este panel no solicita tokens reales. Meta y Replit son los únicos lugares donde debes introducirlos.</p><a href="https://developers.facebook.com/docs/whatsapp/cloud-api/get-started" target="_blank" rel="noreferrer" className="mt-3 inline-flex items-center gap-1.5 text-xs font-semibold text-[hsl(32_44%_25%)] hover:underline" data-testid="link-meta-security">Guía oficial de inicio <ExternalLink size={13} /></a></div></div>
+           <div className="flex items-start gap-3"><ShieldAlert size={18} className="mt-0.5 shrink-0 text-[hsl(32_44%_30%)]" /><div><h2 className="text-sm font-semibold text-[hsl(32_44%_25%)]">Protege tus credenciales</h2><p className="mt-1.5 text-xs leading-relaxed text-[hsl(32_44%_30%)]">Este panel no solicita tokens reales. Introdúcelos solo en Meta y en la configuración protegida del servidor.</p><a href="https://developers.facebook.com/docs/whatsapp/cloud-api/get-started" target="_blank" rel="noreferrer" className="mt-3 inline-flex items-center gap-1.5 text-xs font-semibold text-[hsl(32_44%_25%)] hover:underline" data-testid="link-meta-security">Guía oficial de inicio <ExternalLink size={13} /></a></div></div>
         </section>
       </aside>
     </div>
+    </>}
 
-    <section id="simulador-whatsapp" className="mt-6 grid gap-6 xl:grid-cols-[minmax(0,1.15fr)_minmax(300px,.85fr)]">
+    <section id="simulador-whatsapp" className={`mt-6 grid gap-6 ${isSuperadmin ? 'xl:grid-cols-[minmax(0,1.15fr)_minmax(300px,.85fr)]' : ''}`}>
       <section className="surface rounded-[22px] p-5 sm:p-6">
          <div className="mb-5 flex items-start justify-between gap-4"><div className="min-w-0"><p className="text-[10px] font-bold uppercase tracking-[.16em] text-primary">Motor real</p><h2 className="mt-1 break-words text-[17px] font-semibold">Simulador de conversación</h2><p className="mt-1 break-words text-xs text-muted-foreground">Usa el mismo motor que WhatsApp para probar FAQs, tratamientos, citas y derivaciones sin contactar clientes.</p></div><div className="flex shrink-0 items-center gap-2"><Button variant="ghost" className="h-11 px-2.5 text-xs" onClick={() => void resetSimulator()} disabled={simulate.isPending}><RotateCcw size={14} />Reiniciar</Button><span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary"><MessageCircle size={18} /></span></div></div>
         <div className="min-h-[330px] space-y-3 rounded-2xl bg-[hsl(36_33%_94%)] p-4 dark:bg-muted/40">{messages.map((message, index) => <div key={`${message.from}-${index}`} className={`flex ${message.from === 'client' ? 'justify-end' : 'justify-start'}`} data-testid={`message-simulator-${index}`}><div className={`max-w-[82%] rounded-2xl px-3.5 py-2.5 text-sm leading-relaxed ${message.from === 'client' ? 'rounded-br-md bg-primary text-primary-foreground' : 'rounded-bl-md bg-card text-foreground shadow-sm'}`}>{message.text}<div className={`mt-1 flex items-center justify-end gap-1 text-[10px] ${message.from === 'client' ? 'text-primary-foreground/65' : 'text-muted-foreground'}`}><span>10:24</span>{message.from === 'client' && <CheckCheck size={12} />}</div></div></div>)}</div>
          <div className="mt-3 flex gap-2"><input value={draft} onChange={(event) => setDraft(event.target.value)} onKeyDown={(event) => { if (event.key === 'Enter') void send(); }} className={`${inputClass} min-w-0 flex-1`} placeholder="Escribe hola, tratamientos, cita..." aria-label="Mensaje de simulación" data-testid="input-simulator-message" disabled={simulate.isPending} /><Button onClick={() => void send()} disabled={simulate.isPending} className="h-11 w-11 shrink-0 px-0" aria-label="Enviar mensaje" data-testid="button-send-simulator">{simulate.isPending ? <RefreshCw size={15} className="animate-spin" /> : <Send size={15} />}</Button></div>
       </section>
 
-      <section className="surface rounded-[22px] p-5 sm:p-6">
+      {isSuperadmin && <section className="surface rounded-[22px] p-5 sm:p-6">
         <div className="mb-5 flex items-start gap-3"><span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-accent/35 text-[hsl(32_44%_30%)]"><Globe2 size={17} /></span><div><h2 className="text-[15px] font-semibold">Lo que Meta necesita</h2><p className="mt-1 text-xs text-muted-foreground">Ten estos datos a mano al completar la configuración.</p></div></div>
         <div className="space-y-3">
-          {[{ icon: <Link2 size={15} />, title: 'URL pública', detail: 'La URL completa del webhook debe ser accesible desde internet.' }, { icon: <Code2 size={15} />, title: 'Ruta fija', detail: webhookPath }, { icon: <FileKey2 size={15} />, title: 'Token de verificación', detail: 'Usa el valor almacenado en Replit Secrets; no lo compartas aquí.' }].map((item) => <div key={item.title} className="flex gap-3 rounded-xl bg-muted/45 p-3"><span className="mt-0.5 text-primary">{item.icon}</span><div className="min-w-0"><p className="text-xs font-semibold">{item.title}</p><p className="mt-1 break-words text-[11px] leading-relaxed text-muted-foreground">{item.detail}</p></div></div>)}
+          {[{ icon: <Link2 size={15} />, title: 'URL pública', detail: 'La URL completa del webhook debe ser accesible desde internet.' }, { icon: <Code2 size={15} />, title: 'Ruta fija', detail: webhookPath }, { icon: <FileKey2 size={15} />, title: 'Token de verificación', detail: 'Usa el valor protegido en el servidor; no lo compartas aquí.' }].map((item) => <div key={item.title} className="flex gap-3 rounded-xl bg-muted/45 p-3"><span className="mt-0.5 text-primary">{item.icon}</span><div className="min-w-0"><p className="text-xs font-semibold">{item.title}</p><p className="mt-1 break-words text-[11px] leading-relaxed text-muted-foreground">{item.detail}</p></div></div>)}
         </div>
         <div className="mt-4 flex items-start gap-2 rounded-xl border border-primary/15 bg-primary/5 p-3 text-[11px] leading-relaxed text-muted-foreground"><Info size={14} className="mt-0.5 shrink-0 text-primary" />Cuando Meta confirme la verificación, vuelve aquí y registra la prueba final.</div>
-      </section>
+      </section>}
     </section>
 
   </AppShell>;

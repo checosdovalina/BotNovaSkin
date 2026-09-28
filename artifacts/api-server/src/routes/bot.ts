@@ -40,6 +40,7 @@ import {
 } from "../lib/conversation-engine";
 import { sendWhatsAppTemplate, whatsappConfigured } from "../lib/whatsapp";
 import { requireReception } from "../middlewares/requireReception";
+import { requireRole } from "../lib/local-auth";
 import { alternateAlertsAvailable, getPushKeys, validPushEndpoint } from "../lib/reception-push";
 
 const router: IRouter = Router();
@@ -193,7 +194,7 @@ router.delete("/bot/push", async (req, res): Promise<void> => {
   res.sendStatus(204);
 });
 
-router.get("/bot/status", async (_req, res): Promise<void> => {
+router.get("/bot/status", requireRole("superadmin"), async (_req, res): Promise<void> => {
   const connected = whatsappConfigured();
   res.json(
     GetBotStatusResponse.parse({
@@ -207,7 +208,7 @@ router.get("/bot/status", async (_req, res): Promise<void> => {
   );
 });
 
-router.post("/bot/simulate", async (req, res): Promise<void> => {
+router.post("/bot/simulate", requireRole("admin", "superadmin"), async (req, res): Promise<void> => {
   const parsed = SimulateBotBody.safeParse(req.body);
   if (!parsed.success) {
     res.status(400).json({ error: parsed.error.message });

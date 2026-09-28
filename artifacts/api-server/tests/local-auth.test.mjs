@@ -106,6 +106,35 @@ test("cookie-authenticated writes require an exact same-origin Origin", () => {
   }), false);
 });
 
+test("role gates deny restricted API actions with HTTP 403", () => {
+  for (const [role, allowed] of [["staff", ["admin", "superadmin"]], ["admin", ["superadmin"]]]) {
+    let status;
+    let body;
+    let nextCalled = false;
+    auth.requireRole(...allowed)(
+      { localUser: { id: "user-1", email: "user@example.test", role } },
+      { status: (code) => { status = code; return { json: (value) => { body = value; } }; } },
+      () => { nextCalled = true; },
+    );
+    assert.equal(status, 403);
+    assert.deepEqual(body, { error: "No tienes permisos para realizar esta acción" });
+    assert.equal(nextCalled, false);
+  }
+});
+
+test("account-role policy prevents staff administration, admin escalation, and web superadmin management", () => {
+  assert.equal(auth.canCreateLocalRole("admin", "staff"), true);
+  assert.equal(auth.canCreateLocalRole("admin", "admin"), false);
+  assert.equal(auth.canCreateLocalRole("admin", "superadmin"), false);
+  assert.equal(auth.canCreateLocalRole("superadmin", "admin"), true);
+  assert.equal(auth.canCreateLocalRole("superadmin", "superadmin"), false);
+  assert.equal(auth.canManageLocalRole("admin", "staff"), true);
+  assert.equal(auth.canManageLocalRole("admin", "admin"), false);
+  assert.equal(auth.canManageLocalRole("superadmin", "admin"), true);
+  assert.equal(auth.canManageLocalRole("superadmin", "superadmin"), false);
+  assert.equal(auth.canManageLocalRole("staff", "staff"), false);
+});
+
 test("cross-site HTML form login is rejected before reaching the login handler", () => {
   let status;
   let body;

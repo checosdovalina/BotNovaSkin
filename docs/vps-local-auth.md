@@ -44,6 +44,25 @@ sudo bash -c '
 
 La creación inicial se rechaza si ya existe una cuenta local. Después, el administrador inicia sesión en `/sign-in` y crea cuentas desde `/admin/users`. Nunca abrir un registro público ni compartir una sola cuenta entre varias personas.
 
+## Separar recepción, administración y superadministración
+
+Recepción (`staff`) atiende conversaciones y citas, pero no modifica el catálogo, las preguntas del bot ni las cuentas. Administración (`admin`) también puede gestionar tratamientos, preguntas, pruebas del bot y cuentas **solo de recepción**. Superadministración (`superadmin`) puede además gestionar administradores y consultar los detalles técnicos de la conexión de WhatsApp. La página `/account` permite a cada persona cambiar su propia contraseña. Estos límites se aplican en la API, no solo en el menú.
+
+Al actualizar una VPS con cuentas existentes, **no se cambia automáticamente el rol de nadie**. Primero elegir explícitamente qué cuenta administrativa activa será la propietaria de superadministración; no elegirla por su posición en una lista ni promover varias cuentas por defecto. Tras compilar la API y **antes de reiniciarla**, ejecutar una sola vez en la VPS (sustituir el correo de ejemplo por el de esa cuenta, sin compartir contraseñas):
+
+```bash
+sudo bash -c '
+  set -a
+  . /etc/botnovaskin.env
+  set +a
+  sudo --preserve-env=DATABASE_URL -u "$(stat -c %U /opt/botnovaskin)" -H bash -lc "cd /opt/botnovaskin && node artifacts/api-server/dist/promote-superadmin.mjs admin@ejemplo.mx"
+'
+```
+
+El programa solo permite promover a un administrador activo cuando no existe ya un superadministrador; revoca sus sesiones para que vuelva a iniciar sesión con el nuevo rol. **No ejecutar este paso hasta identificar la cuenta correcta.** Si no se promueve ninguna, el acceso operativo y administrativo permanece disponible, pero la página de configuración técnica no estará accesible. La cuenta superadministradora no se crea ni se modifica desde el panel; su contraseña se recupera con el procedimiento interactivo de la siguiente sección.
+
+Esta actualización cambia el panel web y la API: compilar **ambos** antes del reinicio del servicio y recargar la pestaña del navegador después. No ejecutar `db push` solo por estos roles: la columna de rol sigue siendo texto, sin cambio de esquema SQL.
+
 ## Si aparece «Correo o contraseña incorrectos»
 
 Ese mensaje significa que la cuenta no existe en **la base de datos usada por la API de la VPS** o que la contraseña no coincide. Las credenciales del entorno de desarrollo no funcionan en la VPS. Tampoco basta con proponer un correo y contraseña en el chat: la cuenta tiene que crearse efectivamente en esa base de datos.
@@ -59,7 +78,7 @@ sudo bash -c '
 '
 ```
 
-El comando muestra los correos de administradores activos. Si aún no hay cuentas, crea el primer administrador; si ya existe el administrador que selecciones, establece **una contraseña nueva** y cierra sus sesiones anteriores. Pide el correo y la contraseña dos veces directamente en la terminal; no los recibe por argumentos ni imprime la contraseña. Si existe otra cuenta pero no hay administradores activos, se detiene sin cambiar nada.
+El comando muestra los correos de administradores **y superadministradores** activos. Si aún no hay cuentas, crea el primer administrador; si ya existe la cuenta administrativa que selecciones, establece **una contraseña nueva** y cierra sus sesiones anteriores, sin cambiar su rol. Pide el correo y la contraseña dos veces directamente en la terminal; no los recibe por argumentos ni imprime la contraseña. Si existe otra cuenta pero no hay cuentas administrativas activas, se detiene sin cambiar nada.
 
 Usa el correo exacto que muestre el comando. Si una contraseña anterior se compartió en un chat, no la reutilices: elige una nueva solo en la terminal de la VPS. Después inicia sesión en `/sign-in`. Si el comando falla por tabla inexistente, aplica primero el paso de esquema de esta guía; si falla por conexión, comprueba que el `DATABASE_URL` cargado sea el mismo que usa `botnovaskin-api`.
 

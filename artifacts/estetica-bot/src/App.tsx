@@ -17,6 +17,7 @@ import Privacy from '@/pages/privacy';
 import SignIn from '@/pages/sign-in';
 import Account from '@/pages/account';
 import AdminUsers from '@/pages/admin-users';
+import { canManageContent, type LocalRole } from '@/lib/local-auth';
 
 const unauthorized = (error: unknown) => {
   if (error && typeof error === 'object' && 'status' in error && error.status === 401) {
@@ -30,12 +31,12 @@ const queryClient = new QueryClient({
 });
 const basePath = import.meta.env.BASE_URL.replace(/\/$/, '');
 
-function Protected({ children, admin = false }: { children: ReactNode; admin?: boolean }) {
+function Protected({ children, access }: { children: ReactNode; access?: 'admin' | 'superadmin' }) {
   const { user, loading, error, refresh } = useLocalAuth();
   if (loading) return <div className="mx-auto flex min-h-[100dvh] max-w-xl items-center p-6"><div className="w-full rounded-3xl bg-card p-8"><LoadingRows count={3} /></div></div>;
   if (error) return <div className="mx-auto flex min-h-[100dvh] max-w-xl items-center p-6"><div className="w-full"><ErrorState message="No pudimos verificar tu sesión. Inténtalo de nuevo para continuar." onRetry={() => void refresh()} /></div></div>;
   if (!user) return <SignIn />;
-  if (admin && user.role !== 'admin') return <div className="flex min-h-[100dvh] items-center justify-center bg-background p-6"><div className="surface max-w-md rounded-3xl p-8 text-center"><h1 className="serif text-3xl">Acceso restringido</h1><p className="mt-3 text-sm text-muted-foreground">Esta área está reservada para administración.</p><Button className="mt-6" onClick={() => window.history.back()}>Volver</Button></div></div>;
+  if (access && !(access === 'admin' ? canManageContent(user.role as LocalRole) : user.role === 'superadmin')) return <div className="flex min-h-[100dvh] items-center justify-center bg-background p-6"><div className="surface max-w-md rounded-3xl p-8 text-center"><h1 className="serif text-3xl">Acceso restringido</h1><p className="mt-3 text-sm text-muted-foreground">Esta área está reservada para administración.</p><Button className="mt-6" onClick={() => window.history.back()}>Volver</Button></div></div>;
   return <>{children}</>;
 }
 function SignInRoute() {
@@ -54,12 +55,12 @@ function Router() {
     <Route path="/privacy" component={Privacy} />
     <Route path="/"><Protected><Dashboard /></Protected></Route>
     <Route path="/appointments"><Protected><Appointments /></Protected></Route>
-    <Route path="/services"><Protected><Services /></Protected></Route>
-    <Route path="/faqs"><Protected><Faqs /></Protected></Route>
-    <Route path="/bot"><Protected><Bot /></Protected></Route>
+    <Route path="/services"><Protected access="admin"><Services /></Protected></Route>
+    <Route path="/faqs"><Protected access="admin"><Faqs /></Protected></Route>
+    <Route path="/bot"><Protected access="admin"><Bot /></Protected></Route>
     <Route path="/conversations"><Protected><Conversations /></Protected></Route>
     <Route path="/account"><Protected><Account /></Protected></Route>
-    <Route path="/admin/users"><Protected admin><AdminUsers /></Protected></Route>
+    <Route path="/admin/users"><Protected access="admin"><AdminUsers /></Protected></Route>
     <Route component={NotFound} />
   </Switch></RoutedErrorBoundary>;
 }

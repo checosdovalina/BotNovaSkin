@@ -1,5 +1,5 @@
 import { createInterface } from "node:readline";
-import { eq } from "drizzle-orm";
+import { eq, inArray } from "drizzle-orm";
 import { db, localSessionsTable, localUsersTable } from "@workspace/db";
 import { hashPassword, isValidEmail, isValidPassword, newLocalUserId, normalizeEmail } from "../lib/local-auth";
 import { hiddenPrompt } from "./hidden-prompt";
@@ -7,7 +7,7 @@ import { hiddenPrompt } from "./hidden-prompt";
 async function askEmail(): Promise<string> {
   const prompt = createInterface({ input: process.stdin, output: process.stdout });
   try {
-    return normalizeEmail(await new Promise<string>((resolve) => prompt.question("Correo del administrador: ", resolve)));
+    return normalizeEmail(await new Promise<string>((resolve) => prompt.question("Correo del administrador o superadministrador: ", resolve)));
   } finally {
     prompt.close();
   }
@@ -23,14 +23,14 @@ try {
     id: localUsersTable.id,
     email: localUsersTable.email,
     active: localUsersTable.active,
-  }).from(localUsersTable).where(eq(localUsersTable.role, "admin"));
+  }).from(localUsersTable).where(inArray(localUsersTable.role, ["admin", "superadmin"]));
   const activeAdmins = admins.filter((admin) => admin.active);
 
   if (anyUser && !activeAdmins.length) {
-    throw new Error("Hay cuentas locales, pero ningún administrador activo. No se modificó ninguna cuenta.");
+    throw new Error("Hay cuentas locales, pero ningún administrador o superadministrador activo. No se modificó ninguna cuenta.");
   }
   if (activeAdmins.length) {
-    process.stdout.write(`Administradores activos: ${activeAdmins.map((admin) => admin.email).join(", ")}\n`);
+    process.stdout.write(`Cuentas administrativas activas: ${activeAdmins.map((admin) => admin.email).join(", ")}\n`);
   } else {
     process.stdout.write("No hay cuentas locales; se creará el primer administrador.\n");
   }
@@ -39,7 +39,7 @@ try {
   if (!isValidEmail(email)) throw new Error("Introduce un correo válido.");
   const admin = activeAdmins.find((account) => account.email === email);
   if (anyUser && !admin) {
-    throw new Error("Ese correo no corresponde a un administrador activo. No se modificó ninguna cuenta.");
+    throw new Error("Ese correo no corresponde a una cuenta administrativa activa. No se modificó ninguna cuenta.");
   }
 
   const password = await hiddenPrompt("Nueva contraseña (oculta, mínimo 12 caracteres): ");
@@ -56,8 +56,8 @@ try {
         active: localUsersTable.active,
         role: localUsersTable.role,
       }).from(localUsersTable).where(eq(localUsersTable.id, admin.id)).for("update");
-      if (!current || !current.active || current.role !== "admin" || current.email !== email) {
-        throw new Error("La cuenta dejó de ser un administrador activo. No se cambió la contraseña.");
+       if (!current || !current.active || !["admin", "superadmin"].includes(current.role) || current.email !== email) {
+         throw new Error("La cuenta dejó de ser una cuenta administrativa activa. No se cambió la contraseña.");
       }
       await tx.update(localUsersTable).set({ passwordHash }).where(eq(localUsersTable.id, admin.id));
       await tx.delete(localSessionsTable).where(eq(localSessionsTable.userId, admin.id));

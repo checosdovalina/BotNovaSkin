@@ -1,5 +1,6 @@
 import { asc, eq } from "drizzle-orm";
 import { Router, type IRouter } from "express";
+import { requireRole } from "../lib/local-auth";
 import { db, faqsTable, servicesTable } from "@workspace/db";
 import {
   CreateFaqBody,
@@ -26,7 +27,7 @@ function withServiceName(row: {
   return row;
 }
 
-router.get("/faqs", async (req, res): Promise<void> => {
+router.get("/faqs", requireRole("admin", "superadmin"), async (req, res): Promise<void> => {
   const rawServiceId = Array.isArray(req.query.serviceId)
     ? req.query.serviceId[0]
     : req.query.serviceId;
@@ -60,7 +61,7 @@ router.get("/faqs", async (req, res): Promise<void> => {
   res.json(ListFaqsResponse.parse(rows.map(withServiceName)));
 });
 
-router.post("/faqs", async (req, res): Promise<void> => {
+router.post("/faqs", requireRole("admin", "superadmin"), async (req, res): Promise<void> => {
   const parsed = CreateFaqBody.safeParse(req.body);
   if (!parsed.success) {
     res.status(400).json({ error: parsed.error.message });
@@ -83,7 +84,7 @@ router.post("/faqs", async (req, res): Promise<void> => {
   res.status(201).json(CreateFaqResponse.parse(row));
 });
 
-router.patch("/faqs/:id", async (req, res): Promise<void> => {
+router.patch("/faqs/:id", requireRole("admin", "superadmin"), async (req, res): Promise<void> => {
   const params = UpdateFaqParams.safeParse(req.params);
   const body = UpdateFaqBody.safeParse(req.body);
   if (!params.success) {
@@ -121,7 +122,7 @@ router.patch("/faqs/:id", async (req, res): Promise<void> => {
   res.json(UpdateFaqResponse.parse(row));
 });
 
-router.delete("/faqs/:id", async (req, res): Promise<void> => {
+router.delete("/faqs/:id", requireRole("admin", "superadmin"), async (req, res): Promise<void> => {
   const params = DeleteFaqParams.safeParse(req.params);
   if (!params.success) {
     res.status(400).json({ error: params.error.message });

@@ -1,5 +1,8 @@
-export type LocalUser = { id: string; email: string; role: 'admin' | 'staff' };
+export type LocalRole = 'staff' | 'admin' | 'superadmin';
+export type LocalUser = { id: string; email: string; role: LocalRole };
 export type ManagedUser = LocalUser & { active: boolean };
+export const canManageContent = (role?: LocalRole) => role === 'admin' || role === 'superadmin';
+export const roleLabel = (role?: LocalRole) => role === 'superadmin' ? 'Superadministración' : role === 'admin' ? 'Administración' : 'Recepción';
 
 export class AuthApiError extends Error {
   constructor(message: string, public status: number) { super(message); }

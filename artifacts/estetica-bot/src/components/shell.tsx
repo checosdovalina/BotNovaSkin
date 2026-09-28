@@ -2,14 +2,15 @@ import { CalendarDays, ChevronRight, CircleHelp, LayoutDashboard, MessageCircle,
 import { Link, useLocation } from 'wouter';
 import { useState, type ReactNode } from 'react';
 import { useLocalAuth } from '@/components/auth-provider';
+import { canManageContent, roleLabel } from '@/lib/local-auth';
 
 const navItems = [
   { href: '/', label: 'Resumen', icon: LayoutDashboard },
   { href: '/appointments', label: 'Citas', icon: CalendarDays },
-  { href: '/services', label: 'Tratamientos', icon: Scissors },
-  { href: '/faqs', label: 'Preguntas del bot', icon: CircleHelp },
+  { href: '/services', label: 'Tratamientos', icon: Scissors, admin: true },
+  { href: '/faqs', label: 'Preguntas del bot', icon: CircleHelp, admin: true },
   { href: '/conversations', label: 'Conversaciones', icon: MessagesSquare },
-  { href: '/bot', label: 'Conexión WhatsApp', icon: MessageCircle },
+  { href: '/bot', label: 'Conexión WhatsApp', icon: MessageCircle, admin: true },
 ];
 
 export function AppShell({ children }: { children: ReactNode }) {
@@ -35,15 +36,15 @@ export function AppShell({ children }: { children: ReactNode }) {
         </div>
         <nav className="space-y-1.5" aria-label="Navegación principal">
           <p className="mb-3 px-3 text-[10px] font-semibold uppercase tracking-[.2em] opacity-45">Espacio de trabajo</p>
-          {navItems.map(({ href, label, icon: Icon }) => (
+          {navItems.filter((item) => !item.admin || canManageContent(user?.role)).map(({ href, label, icon: Icon }) => (
             <Link key={href} href={href} onClick={() => setMobileOpen(false)} className={`group flex min-h-11 items-center gap-3 rounded-xl px-3 py-3 text-[13px] font-medium transition-colors ${active(href) ? 'bg-sidebar-primary text-sidebar-primary-foreground shadow-sm' : 'text-sidebar-foreground/65 hover:bg-sidebar-accent hover:text-sidebar-foreground'}`} data-testid={`link-nav-${label.toLowerCase().replaceAll(' ', '-')}`}>
               <Icon size={17} strokeWidth={active(href) ? 2.2 : 1.8} />
-              <span className="flex-1">{label}</span>
+              <span className="flex-1">{href === '/bot' && user?.role === 'admin' ? 'Pruebas del bot' : label}</span>
               {active(href) && <ChevronRight size={15} className="opacity-60" />}
             </Link>
           ))}
           <p className="mb-3 mt-8 px-3 text-[10px] font-semibold uppercase tracking-[.2em] opacity-45">Acceso</p>
-          {user?.role === 'admin' && <Link href="/admin/users" onClick={() => setMobileOpen(false)} className={`flex min-h-11 items-center gap-3 rounded-xl px-3 py-3 text-[13px] font-medium ${active('/admin/users') ? 'bg-sidebar-primary text-sidebar-primary-foreground' : 'text-sidebar-foreground/65 hover:bg-sidebar-accent hover:text-sidebar-foreground'}`} data-testid="link-nav-users"><UsersRound size={17} />Equipo y accesos</Link>}
+          {canManageContent(user?.role) && <Link href="/admin/users" onClick={() => setMobileOpen(false)} className={`flex min-h-11 items-center gap-3 rounded-xl px-3 py-3 text-[13px] font-medium ${active('/admin/users') ? 'bg-sidebar-primary text-sidebar-primary-foreground' : 'text-sidebar-foreground/65 hover:bg-sidebar-accent hover:text-sidebar-foreground'}`} data-testid="link-nav-users"><UsersRound size={17} />Equipo y accesos</Link>}
           <Link href="/account" onClick={() => setMobileOpen(false)} className={`flex min-h-11 items-center gap-3 rounded-xl px-3 py-3 text-[13px] font-medium ${active('/account') ? 'bg-sidebar-primary text-sidebar-primary-foreground' : 'text-sidebar-foreground/65 hover:bg-sidebar-accent hover:text-sidebar-foreground'}`} data-testid="link-nav-account"><UserRound size={17} />Mi cuenta</Link>
         </nav>
         <div className="mt-auto rounded-2xl border border-sidebar-border bg-sidebar-accent/70 p-4">
@@ -65,7 +66,7 @@ export function AppShell({ children }: { children: ReactNode }) {
              <p className="mt-0.5 text-sm text-foreground/70">{new Intl.DateTimeFormat('es-MX', { dateStyle: 'full' }).format(new Date())}</p>
           </div>
           <div className="ml-auto flex items-center gap-3">
-             <span className="hidden max-w-[180px] text-right sm:block"><span className="block truncate text-xs font-semibold">{user?.email}</span><span className="block text-[11px] text-muted-foreground">{user?.role === 'admin' ? 'Administración' : 'Recepción'}</span></span>
+             <span className="hidden max-w-[180px] text-right sm:block"><span className="block truncate text-xs font-semibold">{user?.email}</span><span className="block text-[11px] text-muted-foreground">{roleLabel(user?.role)}</span></span>
              <Link href="/account" className="flex h-9 w-9 items-center justify-center rounded-full bg-secondary text-xs font-bold text-secondary-foreground" aria-label="Mi cuenta" data-testid="link-header-account">{user?.email.slice(0, 2).toUpperCase()}</Link>
           </div>
         </header>
