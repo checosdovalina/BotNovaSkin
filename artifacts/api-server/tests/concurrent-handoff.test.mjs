@@ -20,13 +20,20 @@ const modules = {
     export const conversationsTable = { id: "id", phone: "phone", status: "status", lastMessageAt: "lastMessageAt" };
     export const conversationMessagesTable = { id: "id", providerMessageId: "providerMessageId" };
     export const appointmentsTable = {}; export const faqsTable = {};
-    export const servicesTable = {};
+    export const servicesTable = { id: "id", active: "active", category: "category", name: "name" };
     export const db = {
       select() {
         return {
           from(table) {
             return {
               where(condition) {
+                if (table === servicesTable) {
+                  return {
+                    orderBy() {
+                      return Promise.resolve(globalThis.handoffTest.services.filter(condition).map((row) => ({ ...row })));
+                    }
+                  };
+                }
                 return Promise.resolve(
                   (table === conversationsTable
                     ? [globalThis.handoffTest.conversation]
@@ -122,6 +129,10 @@ function setup(phone = "5215550000000") {
       lastMessage: "", clientName: null, lastMessageAt: new Date(),
     },
     messages: [],
+    services: [
+      { id: 1, name: "Mesoterapia capilar", category: "Capilar", active: true, price: 0 },
+      { id: 2, name: "NCTF revitalizante", category: "Facial", active: true, price: 0 },
+    ],
     notices: 0,
     async waitForBoth() {
       if (++arrivals === 2) release();
@@ -191,4 +202,17 @@ test("the background check returns only reception chats idle for twenty-four hou
   assert.equal(state.conversation.status, "bot");
   assert.equal(state.conversation.state, "idle");
   assert.equal(await resumeInactiveReceptionConversations(), 0);
+});
+
+test("booking selection 2 chooses the second treatment instead of restarting the booking menu", async () => {
+  const state = setup();
+  const first = await processConversationMessage({ phone: state.conversation.phone, message: "cita" });
+  assert.equal(first.state, "await_service");
+  assert.match(first.reply, /2\..*NCTF revitalizante/);
+
+  const second = await processConversationMessage({ phone: state.conversation.phone, message: "2" });
+  assert.equal(second.state, "await_date");
+  assert.equal(state.conversation.context.serviceId, 2);
+  assert.match(second.reply, /seleccionaste \*NCTF revitalizante\*/);
+  assert.doesNotMatch(second.reply, /Ya estamos agendando tu cita/);
 });

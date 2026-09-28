@@ -823,7 +823,7 @@ async function processState(
     );
   }
   if (conversation.state === "await_service") {
-    if (isAppointmentBookingIntent(normalizedMessage) || normalizedMessage === "2") {
+    if (isAppointmentBookingIntent(normalizedMessage)) {
       return transition(
         conversation,
         "await_service",
